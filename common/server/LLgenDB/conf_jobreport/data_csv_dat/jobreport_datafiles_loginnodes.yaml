@@ -1,0 +1,79 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+# ----------------------------------------------------
+# Global Overview JSON (1 file)
+# ----------------------------------------------------
+- dataset:
+    name:            login_node_overview_json
+    set:             json_loginnodes
+    filepath:        '$outputdir/support/login_node_overview.json.gz'
+    data_database:   loginnodes
+    data_table:      login_node_overview
+    stat_table:      datasetstat_login_overview
+    stat_database:   jobreport_json_stat
+    format:          'json'
+    columns:         'systemname, nodeid, address, logged_in_users, users_with_procs, load_1m, load_score, running_procs, total_cores, max_proc_cpu_pct, worst_cpu_score, max_proc_d_state, d_state_score, gpu_util_pct, gpu_mem_used_mb, gpu_mem_total_mb, mem_total_mb, mem_used_mb, mem_used_pct, mem_score, tmp_total_mb, tmp_used_mb, tmp_used_pct, tmp_score, top_tmp_users, dev_shm_total_mb, dev_shm_used_mb, dev_shm_used_pct, dev_shm_score, top_shm_users'
+    order:           "nodeid ASC"
+
+# ----------------------------------------------------
+# Per-Node User Details JSON (1 file per node)
+# ----------------------------------------------------
+# - dataset:
+#     name:            login_user_overview_json
+#     set:             json_loginnodes
+#     FORALL:          'N:VAR_loginnodes'
+#     filepath:        '$outputdir/support/login_user_$N.json.gz'
+#     column_filemap:  'N:nodeid'
+#     data_database:   loginnodes
+#     data_table:      login_user_overview
+#     table_cache:     login_user_cache
+#     table_cache_par_level: 1
+#     stat_table:      datasetstat_login_users
+#     stat_database:   jobreport_json_stat
+#     format:          'json'
+#     columns:         'nodeid, owner, num_procs, d_state_threads, d_state_score, total_threads, thread_score, max_cpu_pct, total_cpu_pct, max_elapsed_secs, time_score, total_rss_mb, mem_score, tmp_used_mb, total_gpu_mem_mb'
+#     order:           "total_cpu_pct DESC"
+
+# ----------------------------------------------------
+# Per-Node Process Details JSON (1 file per node)
+# ----------------------------------------------------
+- dataset:
+    name:            login_process_overview_json
+    set:             json_loginnodes
+    FORALL:          'N:VAR_loginnodes'
+    filepath:        '$outputdir/support/login_process_$N.json.gz'
+    column_filemap:  'N:nodeid'
+    data_database:   loginnodes
+    data_table:      login_process_overview
+    table_cache:     login_process_cache
+    table_cache_par_level: 1
+    stat_table:      datasetstat_login_process
+    stat_database:   jobreport_json_stat
+    format:          'json'
+    columns:         'systemname, nodeid, owner, pid, name, cmd, cpu_pct, elapsed, cpu_time_secs, cpu_score, threads, d_state_threads, d_state_score, mem_rss_mb, mem_score, gpu_mem_used_mb'
+    # Sort by the heaviest CPU processes first
+    order:           "cpu_pct DESC"
+
+# ----------------------------------------------------
+# ALL Processes Details JSON (No FORALL)
+# ----------------------------------------------------
+- dataset:
+    name:            login_process_all_json
+    set:             json_loginnodes
+    filepath:        '$outputdir/_queued/login_process_all.json.gz'
+    data_database:   loginnodes
+    data_table:      login_process_overview
+    stat_table:      datasetstat_login_process
+    stat_database:   jobreport_json_stat
+    format:          'json'
+    # No sql_where filtering, meaning it grabs everything!
+    columns:         'systemname, nodeid, owner, pid, name, cmd, cpu_pct, elapsed, cpu_time_secs, cpu_score, threads, d_state_threads, d_state_score, mem_rss_mb, mem_score, gpu_mem_used_mb'
+    order:           "cpu_pct DESC"

@@ -1,0 +1,314 @@
+#---------------------------
+# table, filled by LML input
+#---------------------------
+- table:
+    name: rackpower_import
+    options:
+      update:
+        LML: rackpwr
+        mode: replace
+      update_trigger:
+        - rackpower
+        - rackpower_time_aggr
+        - rackpower_aggr_by_ts
+        - rackpower_time_aggr_by_ts
+        - rackpower_rackids
+        - rackpower_aggr_by_rackid
+        - rackenergy_aggr_by_ts
+        - rackenergy_aggr_by_hour
+        - rackenergy_aggr_by_day
+        - rackenergy_aggr_by_month
+      archive:
+      index: rackid,ts
+    columns: 
+      - { name: rackid,           type: int_t,      LML_from: id,               LML_default: -1 }
+      - { name: ts,               type: ts_t,       LML_from: rack_ts,          LML_default: -1,  LML_minlastinsert: mintsinserted }
+      - { name: power,            type: float_t,    LML_from: rack_pwr,         LML_default: 0 }
+
+#---------------------------
+# table, all racks at a ts
+#---------------------------
+- table:
+    name: rackpower
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          sql: DELETE FROM rackpower WHERE (ts >= mintsinserted);
+               INSERT INTO rackpower (rackid,ts,power)
+                      SELECT value,mintsinserted,0
+                      FROM (
+                             SELECT value
+                             FROM generate_series(1, 123, 1)
+                             WHERE value NOT IN ( SELECT rackid
+                                                  FROM rackpower_import )
+                           );
+               INSERT INTO rackpower (rackid,ts,power)
+                      SELECT rackid,ts,power
+                      FROM rackpower_import;
+      archive:
+        limit: max(ts)-25h
+      index: rackid,ts
+    columns: 
+      - { name: rackid,           type: int_t     }
+      - { name: ts,               type: ts_t      }
+      - { name: power,            type: float_t   }
+
+- table:
+    name: rackpower_time_aggr
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          aggr_by_time_resolutions: [1, 60, 1440]     # in minutes (1 min, 1 hour, 1 day)
+          aggr_by_time_mintsvar: mintsinserted
+          sql: 
+              INSERT INTO rackpower_time_aggr
+                           (_time_res, _time_cnt, ts, rackid, power_avg)
+                                 SELECT 1, 1, ts, rackid, power
+                                 FROM rackpower
+                                 WHERE (ts >=  mintsinserted)
+      archive:
+        limit_aggr_time: [ 6120, 133920, 2628000 ]     # in minutes (3 days, 93 days, 5 years)
+        limit_aggr_time_var: ts
+    columns: 
+      - { name: _time_res,       type: _time_res_t }
+      - { name: _time_cnt,       type: _time_cnt_t }
+      - { name: ts,              type: ts_t,      time_aggr: TS  }
+      - { name: rackid,          type: int_t,     time_aggr: KEY  }
+      - { name: power_avg,       type: power_f_t, time_aggr: AVG }
+
+    
+#-------------------------------
+# tables, containing per ts info
+#-------------------------------
+- table:
+    name: rackpower_aggr_by_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM rackpower_aggr_by_ts WHERE (ts >= mintsinserted);
+               INSERT INTO rackpower_aggr_by_ts
+                                 (ts, cnt,
+                                  power_avg, power_min, power_max, power_sum)
+                                              SELECT ts, COUNT(ts),
+                                                     AVG(power),    MIN(power),    MAX(power), SUM(power)
+                                              FROM rackpower WHERE (ts >= mintsinserted)
+                                              GROUP by ts
+      archive:
+        limit: max(ts)-25h
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: cnt,                  type: int_t }
+      - { name: power_avg,            type: float_t }
+      - { name: power_min,            type: float_t }
+      - { name: power_max,            type: float_t }
+      - { name: power_sum,            type: float_t }
+
+
+- table:
+    name: rackpower_time_aggr_by_ts
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          aggr_by_time_resolutions: [1, 60, 1440]     # in minutes (1 min, 1 hour, 1 day)
+          aggr_by_time_mintsvar: mintsinserted
+          sql: 
+              INSERT INTO rackpower_time_aggr_by_ts
+                           (_time_res, _time_cnt, ts, power_avg, power_min, power_max, power_sum)
+                                 SELECT 1, 1, ts,
+                                        power_avg, power_min, power_max, power_sum
+                                 FROM rackpower_aggr_by_ts
+                                 WHERE (ts >=  mintsinserted)
+      archive:
+        limit_aggr_time: [ 6120, 133920, 2628000 ]     # in minutes (3 days, 93 days, 5 years)
+        limit_aggr_time_var: ts
+    columns: 
+      - { name: _time_res,       type: _time_res_t }
+      - { name: _time_cnt,       type: _time_cnt_t }
+      - { name: ts,              type: ts_t,      time_aggr: TS  }
+      - { name: power_avg,       type: power_f_t, time_aggr: AVG }
+      - { name: power_min,       type: power_f_t, time_aggr: MIN }
+      - { name: power_max,       type: power_f_t, time_aggr: MAX }
+      - { name: power_sum,       type: power_f_t, time_aggr: AVG }
+      
+- table:
+    name: rackpower_rackids
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          sql: DELETE FROM rackpower_rackids WHERE rackid IN (select rackid FROM rackpower_import);
+               INSERT INTO rackpower_rackids (rackid, ts)
+                                       SELECT rackid, ts
+                                       FROM rackpower_import;
+      index: rackid
+    columns: 
+      - { name: rackid,           type: int_t     }
+      - { name: ts,               type: ts_t      }
+
+
+#-----------------------------------
+# tables, containing per rackid info
+#-----------------------------------
+- table:
+    name: rackpower_aggr_by_rackid
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sqldebug: 1
+          sql: DELETE FROM rackpower_aggr_by_rackid;
+               INSERT INTO rackpower_aggr_by_rackid
+                               ( rackid,ts,cnt,power_last,power_avg,power_min,power_max )
+                                 SELECT  h.rackid, h.ts,h.cnt,i.power,h.power_avg,h.power_min,h.power_max 
+                                 FROM
+                                  (
+                                     SELECT rackid, MAX(ts) as ts, COUNT(ts) as cnt,
+                                            AVG(power) as power_avg,
+                                            MIN(power) as power_min,
+                                            MAX(power) as power_max
+                                     FROM rackpower 
+                                     GROUP by rackid
+                                  ) h,
+                                  rackpower_import i   
+                                 WHERE h.rackid=i.rackid;    
+    columns: 
+      - { name: rackid,               type: int_t   }
+      - { name: ts,                   type: ts_t    }
+      - { name: cnt,                  type: int_t   }
+      - { name: power_last,           type: float_t }
+      - { name: power_avg,            type: float_t }
+      - { name: power_min,            type: float_t }
+      - { name: power_max,            type: float_t }
+ 
+      
+      
+#---------------------------------------------
+# energy, integration over minute-based probes
+#---------------------------------------------
+
+# select ts, strftime("%Y",datetime(ts,'unixepoch','localtime')),LAG(ts,1,ts) OVER (ORDER BY ts) as ts_prev, ts - LAG(ts,1,ts) OVER (ORDER BY ts) as ts_diff, power_sum, power_sum * (ts - LAG(ts,1,ts) OVER (ORDER BY ts))/3600.0/1e6 as energy_MWh from rackpower_aggr_by_ts LIMIT 10;
+- table:
+    name: rackenergy_aggr_by_ts
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          sql: DELETE FROM rackenergy_aggr_by_ts;
+               INSERT INTO rackenergy_aggr_by_ts
+                                 (ts, hour, day, month, year,
+                                  ts_delta, power_sum, energy_sum )
+                                  SELECT ts,
+                                   strftime("%Y%m%d%H",datetime(ts,'unixepoch','localtime')),
+                                   strftime("%Y%m%d",datetime(ts,'unixepoch','localtime')),
+                                   strftime("%Y%m",datetime(ts,'unixepoch','localtime')),
+                                   strftime("%Y",datetime(ts,'unixepoch','localtime')),
+                                   ts - LAG(ts,1,ts) OVER (ORDER BY ts) as ts_diff,
+                                   power_sum,
+                                   power_sum * (ts - LAG(ts,1,ts) OVER (ORDER BY ts))/3600.0/1000000 as energy_sum
+                                  FROM rackpower_aggr_by_ts;
+      archive:
+        limit: max(ts)-25h
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: hour,                 type: shortstr_t }
+      - { name: day,                  type: shortstr_t }
+      - { name: month,                type: shortstr_t }
+      - { name: year,                 type: shortstr_t }
+      - { name: ts_delta,             type: ts_t }
+      - { name: power_sum,            type: float_t }
+      - { name: energy_sum,           type: float_t }
+
+
+- table:
+    name: rackenergy_aggr_by_hour
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          sql: DELETE FROM rackenergy_aggr_by_hour WHERE (hour >= strftime("%Y%m%d%H",datetime(mintsinserted,'unixepoch','localtime')));
+               INSERT INTO rackenergy_aggr_by_hour
+                                 (ts, hour, day, month, year,
+                                  ts_delta, energy_sum )
+                                  SELECT max(ts),
+                                   hour, max(day), max(month), max(year),
+                                   sum(ts_delta),
+                                   sum(energy_sum)
+                                   FROM rackenergy_aggr_by_ts
+                                   WHERE (hour >= strftime("%Y%m%d%H",datetime(mintsinserted,'unixepoch','localtime')))
+                                   GROUP BY hour;
+      archive:
+        limit: max(ts)-31d
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: hour,                 type: shortstr_t }
+      - { name: day,                  type: shortstr_t }
+      - { name: month,                type: shortstr_t }
+      - { name: year,                 type: shortstr_t }
+      - { name: ts_delta,             type: ts_t }
+      - { name: energy_sum,           type: float_t }
+
+      
+- table:
+    name: rackenergy_aggr_by_day
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          sql: DELETE FROM rackenergy_aggr_by_day WHERE (day >= strftime("%Y%m%d",datetime(mintsinserted,'unixepoch','localtime')));
+               INSERT INTO rackenergy_aggr_by_day
+                                 (ts, day, month, year,
+                                  ts_delta, energy_sum )
+                                  SELECT max(ts),
+                                   day, max(month), max(year),
+                                   sum(ts_delta),
+                                   sum(energy_sum)
+                                   FROM rackenergy_aggr_by_hour
+                                   WHERE (day >= strftime("%Y%m%d",datetime(mintsinserted,'unixepoch','localtime')))
+                                   GROUP BY day;
+      archive:
+        limit: max(ts)-365d
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: day,                  type: shortstr_t }
+      - { name: month,                type: shortstr_t }
+      - { name: year,                 type: shortstr_t }
+      - { name: ts_delta,             type: ts_t }
+      - { name: energy_sum,           type: float_t }
+
+
+- table:
+    name: rackenergy_aggr_by_month
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          sql: DELETE FROM rackenergy_aggr_by_month WHERE (month >= strftime("%Y%m",datetime(mintsinserted,'unixepoch','localtime')));
+               INSERT INTO rackenergy_aggr_by_month
+                                 (ts, month, year,
+                                  ts_delta, energy_sum )
+                                  SELECT max(ts),
+                                   month, max(year),
+                                   sum(ts_delta),
+                                   sum(energy_sum)
+                                   FROM rackenergy_aggr_by_day
+                                   WHERE (month >= strftime("%Y%m",datetime(mintsinserted,'unixepoch','localtime')))
+                                   GROUP BY month;
+      archive:
+        limit: max(ts)-3650d
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: month,                type: shortstr_t }
+      - { name: year,                 type: shortstr_t }
+      - { name: ts_delta,             type: ts_t }
+      - { name: energy_sum,           type: float_t }
+      

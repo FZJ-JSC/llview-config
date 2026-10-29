@@ -1,0 +1,27 @@
+- name: "login01"
+  section: "login_login01"
+  description: "Active users and process statistics on login1.fz-juelich.de."
+  default: false
+  template: "/data/LLtemplates/login_process_overview"
+  context: "data/support/login_process_login01.json"
+  ref: [ datatable ]
+  data:
+    default_columns: [ 'PID', 'Process Info', 'CPU Usage', 'Threads', 'Memory' ]
+- name: "login02"
+  section: "login_login02"
+  description: "Active users and process statistics on login2.fz-juelich.de."
+  default: false
+  template: "/data/LLtemplates/login_process_overview"
+  context: "data/support/login_process_login02.json"
+  ref: [ datatable ]
+  data:
+    default_columns: [ 'PID', 'Process Info', 'CPU Usage', 'Threads', 'Memory' ]
+- name: "login03"
+  section: "login_login03"
+  description: "Active users and process statistics on login3.fz-juelich.de."
+  default: false
+  template: "/data/LLtemplates/login_process_overview"
+  context: "data/support/login_process_login03.json"
+  ref: [ datatable ]
+  data:
+    default_columns: [ 'PID', 'Process Info', 'CPU Usage', 'Threads', 'Memory' ]

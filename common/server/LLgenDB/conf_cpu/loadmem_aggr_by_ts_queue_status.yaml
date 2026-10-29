@@ -1,0 +1,60 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+#-----------------------------------
+# Queue-specific Node State Tracking
+#-----------------------------------
+- table:
+    name: loadmem_aggr_by_ts_queue_status
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          # A Common Table Expression (CTE) constructs a comprehensive grid of all queues and statuses.
+          # Actual metrics are mapped to this grid via a LEFT JOIN, guaranteeing that empty states 
+          # evaluate to 0 rather than omitting the row entirely.
+          sql: DELETE FROM loadmem_aggr_by_ts_queue_status WHERE (ts >= mintsinserted);
+                
+                WITH target_queues(q) AS (
+                    SELECT 'batch' UNION ALL SELECT 'gpus' UNION ALL SELECT 'develgpus'
+                ),
+                target_statuses(s) AS (
+                    SELECT 'Ru' UNION ALL SELECT 'Id' UNION ALL SELECT 'Do' 
+                    UNION ALL SELECT 'Pl' UNION ALL SELECT 'Po' UNION ALL SELECT 'Re' UNION ALL SELECT 'Un'
+                ),
+                distinct_ts(ts) AS (
+                    SELECT DISTINCT ts FROM loadmem WHERE (ts >= mintsinserted)
+                ),
+                grid(ts, q, s) AS (
+                    SELECT t.ts, q.q, s.s FROM distinct_ts t, target_queues q, target_statuses s
+                ),
+                actual_counts AS (
+                    SELECT ts, 'batch' AS q, status, count(DISTINCT nodeid) AS c 
+                    FROM loadmem WHERE (ts >= mintsinserted) AND classes LIKE '%[batch:%' GROUP BY ts, status
+                    UNION ALL
+                    SELECT ts, 'gpus' AS q, status, count(DISTINCT nodeid) AS c 
+                    FROM loadmem WHERE (ts >= mintsinserted) AND classes LIKE '%[gpus:%' GROUP BY ts, status
+                    UNION ALL
+                    SELECT ts, 'develgpus' AS q, status, count(DISTINCT nodeid) AS c 
+                    FROM loadmem WHERE (ts >= mintsinserted) AND classes LIKE '%[develgpus:%' GROUP BY ts, status
+                )
+                INSERT INTO loadmem_aggr_by_ts_queue_status (ts, qid, queue, status, count)
+                SELECT g.ts, g.q||g.s, g.q, g.s, IFNULL(a.c, 0)
+                FROM grid g
+                LEFT JOIN actual_counts a ON g.ts = a.ts AND g.q = a.q AND g.s = a.status;
+      archive:
+        limit: max(ts)-72h
+      index: queue,status,ts
+    columns: 
+      - { name: ts,              type: ts_t }
+      - { name: qid,             type: fid_t }
+      - { name: queue,           type: name_t }
+      - { name: status,          type: status_t }
+      - { name: count,           type: count_t }

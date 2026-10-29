@@ -1,0 +1,66 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+
+- dataset:
+    name: sysrackpwr_csv
+    set:        rackpower
+    FORALL:     'S:VAR_sysrackpwr_system'
+    filepath:   '$outputdir/_sysstat/sysrackpwr_${S}.csv'
+    columns:        'ts,power_avg'
+    header:         'date,power'
+    column_convert: 'ts->todate_1, power_avg->toThousand'
+    column_filemap: 'S:rackid'
+    format_str:      '%s,%f'
+    column_ts:      'ts'
+    format:         'csv'
+#    renew:          'always'
+    renew:          'daily(14:00)'
+    time_aggr:      'span'
+    data_database:   powerstate
+    data_table:      rackpower_time_aggr
+    stat_database:   jobreport_stat_rackpower
+    stat_table:      datasetstat_csv
+
+- dataset:
+    name: sysallrackpwr_csv
+    set:        rackpower
+    filepath:   '$outputdir/_sysstat/sysrackpwr_allracks.csv'
+    columns:        'ts,power_sum'
+    header:         'date,power'
+    column_convert: 'ts->todate_1, power_sum->toMillion'
+    format_str:      '%s,%f'
+    column_ts:      'ts'
+    format:         'csv'
+#    renew:          'always'
+    renew:          'daily(14:00)'
+    time_aggr:      'span'
+    data_database:   powerstate
+    data_table:      rackpower_time_aggr_by_ts
+    stat_database:   jobreport_stat_rackpower
+    stat_table:      datasetstat_csv
+
+- dataset:
+    name: sysallrackpwr_minmax_csv
+    set:        rackpower
+    filepath:   '$outputdir/_sysstat/sysrackpwr_allracks_minmax.csv'
+    columns:        'ts,power_min,power_avg,power_max'
+    header:         'date,power'
+    column_convert: 'ts->todate_1, power_min->toThousand, power_avg->toThousand, power_max->toThousand'
+    format_str:      '%s,%f;%f;%f'
+    column_ts:      'ts'
+    format:         'csv'
+#    renew:          'always'
+    renew:          'daily(14:00)'
+    time_aggr:      'span'
+    data_database:   powerstate
+    data_table:      rackpower_time_aggr_by_ts
+    stat_database:   jobreport_stat_rackpower
+    stat_table:      datasetstat_csv
+

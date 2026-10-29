@@ -1,0 +1,428 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+############
+# Graph Page
+############
+- graphpage:
+    name:          "steptimelines"
+    filepath:      "$outputdir/ll/graphpage_steptimelines.json"
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_graphpages
+    columns:       1
+    sync_graphs:   false
+    graphs: 
+############
+       - name: "Global"
+         xcol: "dt_ms"
+         height: "300px"
+         layout:
+           barmode: "overlay"
+           showlegend: false
+           xaxis: 
+              type: 'date'
+              # dtick: 300000
+              # tick0: '2026-03-29 00:00:00'
+              # showgrid: true
+              # minor:
+              #   dtick: 60000
+              #   showgrid: true
+              #   gridcolor: 'rgba(150,150,150,0.25)'
+              # gridcolor: 'rgba(150,150,150,0.6)'
+              # type: "date"
+              dtick: 60000
+              tick0: '2026-01-01 00:00:00'
+              showgrid: true
+              gridcolor: 'rgba(100,100,100,0.4)'
+              gridwidth: 1
+          #  yaxis: 
+          #      title: 
+          #         text: "Substep Nr"
+          #  legend:
+          #      x: "0.0"
+          #      xref: "x domain"
+          #      xanchor: "left"
+          #      y: "1"
+          #      yanchor: "top"
+           title:
+               text: "<b>Global Timeline of Actions (Last 20 minutes)<b>"
+               font: 
+                  family: 'Arial'
+                  size: 16
+               xref: "x domain"
+               x:    "0.5"
+               xanchor: "center"
+         traces:
+           - name:   "Global"
+             ycol: "wf_name"
+             basecol: "ts_ms"
+             colorby: "wf_cnt"
+             onhover:
+              #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+               - wf_name: { name: 'Step name'}
+               - startdate: { name: 'Start date' }
+               - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+               - wf_cnt: { name: 'Global Counter'}
+             color:
+               - '#E63946'
+               - '#C2CAD9'
+               - '#A8DADC'
+               - '#457B9D'
+               - '#1D3557'
+               - '#FFB703'
+               - '#EF476F'
+               - '#06D6A0'
+               - '#118AB2'
+               - '#8E44AD'
+               - '#FFC300'
+               - '#C5A880'
+               - '#6A0572'
+               - '#2A9D8F'
+               - '#E9C46A'
+               - '#264653'
+               - '#F4A261'
+               - '#8D5524'
+               - '#9A8F97'
+               - '#4A4E69'
+            #  ycol: "nr"
+            #  yaxis:  "y"
+             type:   "bar"
+             orientation: 'h'
+             datapath: "data/_internal/steptimings/steptimeline_global.csv"
+             
+############
+       - name: "Collect"
+         xcol: "dt_ms"
+         height: "400px"
+         layout:
+           showlegend: false
+           xaxis: 
+               type: "date"
+          #  yaxis: 
+          #      title: 
+          #         text: "Substep Nr"
+          #  legend:
+          #      x: "0.0"
+          #      xref: "x domain"
+          #      xanchor: "left"
+          #      y: "1"
+          #      yanchor: "top"
+           title:
+               text: "<b>Collect Action Timeline<b>"
+               font: 
+                  family: 'Arial'
+                  size: 16
+               xref: "x domain"
+               x:    "0.5"
+               xanchor: "center"
+         traces:
+           - name:   "Collect"
+             ycol: "id"
+             basecol: "ts_ms"
+             colorby: "groupnr"
+             onhover:
+              #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+               - id: { name: 'Step name'}
+               - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+               - cmplx: { name: 'Complexity' }
+             color:
+               - '#FF0000'
+               - '#00FF00'
+               - '#0000FF'
+               - '#00FFFF'
+               - '#FF00FF'
+               - '#FFFF00'
+            #  ycol: "nr"
+            #  yaxis:  "y"
+             type:   "bar"
+             orientation: 'h'
+             datapath: "data/_internal/steptimings/steptimeline_Collect.csv"
+             
+############
+       - name: "DBupdate"
+         xcol: "dt_ms"
+         height: "400px"
+         layout:
+           showlegend: false
+           xaxis: 
+               type: "date"
+          #  yaxis: 
+          #      title: 
+          #         text: "Substep Nr"
+          #  legend:
+          #      x: "0.0"
+          #      xref: "x domain"
+          #      xanchor: "left"
+          #      y: "1"
+          #      yanchor: "top"
+           title:
+               text: "<b>DBupdate Action Timeline<b>"
+               font: 
+                  family: 'Arial'
+                  size: 16
+               xref: "x domain"
+               x:    "0.5"
+               xanchor: "center"
+         traces:
+           - name:   "DBupdate"
+             ycol: "id"
+             basecol: "ts_ms"
+             colorby: "groupnr"
+             onhover:
+              #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+               - id: { name: 'Step name'}
+               - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+               - cmplx: { name: 'Complexity' }
+             color:
+               - '#FF0000'
+               - '#00FF00'
+               - '#0000FF'
+               - '#00FFFF'
+               - '#FF00FF'
+               - '#FFFF00'
+            #  ycol: "nr"
+            #  yaxis:  "y"
+             type:   "bar"
+             orientation: 'h'
+             datapath: "data/_internal/steptimings/steptimeline_DBupdate.csv"
+             
+############
+       - name: "DBupdateInternal"
+         xcol: "dt_ms"
+         height: "600px"
+         layout:
+           showlegend: false
+           xaxis: 
+               type: "date"
+          #  yaxis: 
+          #      title: "Substep Nr"
+          #  legend:
+          #      x: "0.0"
+          #      xref: "x domain"
+          #      xanchor: "left"
+          #      y: "1"
+          #      yanchor: "top"
+           title:
+               text: "<b>Internal LML DBupdate Step Timeline<b>"
+               font: 
+                  family: 'Arial'
+                  size: 16
+               xref: "x domain"
+               x:    "0.5"
+               xanchor: "center"
+         traces:
+           - name:   "DBupdate"
+             ycol: "id"
+             basecol: "ts_ms"
+             colorby: "groupnr"
+             onhover:
+              #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+               - id: { name: 'Step name'}
+               - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+               - cmplx: { name: 'Complexity' }
+             color:
+               - '#FF0000'
+               - '#00FF00'
+               - '#0000FF'
+               - '#00FFFF'
+               - '#FF00FF'
+               - '#FFFF00'
+            #  ycol: "nr"
+            #  yaxis:  "y"
+             type:   "bar"
+             orientation: 'h'
+             datapath: "data/_internal/steptimings/steptimeline_DBuIntsort.csv"
+             
+############
+       - name: "jobreport"
+         xcol: "dt_ms"
+         height: "800px"
+         layout:
+           showlegend: false
+           xaxis: 
+               type: "date"
+          #  yaxis: 
+          #      title: 
+          #         text: "Substep Nr"
+          #  legend:
+          #      x: "0.0"
+          #      xref: "x domain"
+          #      xanchor: "left"
+          #      y: "1"
+          #      yanchor: "top"
+           title:
+               text: "<b>JobReport Action Timeline<b>"
+               font: 
+                  family: 'Arial'
+                  size: 16
+               xref: "x domain"
+               x:    "0.5"
+               xanchor: "center"
+         traces:
+           - name:   "Jobreport"
+             ycol: "id"
+             basecol: "ts_ms"
+             colorby: "groupnr"
+             onhover:
+              #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+               - id: { name: 'Step name'}
+               - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+               - cmplx: { name: 'Complexity' }
+             color:
+               - '#FF0000'
+               - '#00FF00'
+               - '#0000FF'
+               - '#00FFFF'
+               - '#FF00FF'
+               - '#FFFF00'
+            #  ycol: "nr"
+            #  yaxis:  "y"
+             type:   "bar"
+             orientation: 'h'
+             datapath: "data/_internal/steptimings/steptimeline_JRIntsort.csv"
+      #  - name: "Part2"
+      #    xcol: "dt_ms"
+      #    height: "300px"
+      #    layout:
+      #      showlegend: false
+      #      xaxis: 
+      #          type: "date"
+      #     #  yaxis: 
+      #     #      title: 
+      #     #         text: "Substep Nr"
+      #     #  legend:
+      #     #      x: "0.0"
+      #     #      xref: "x domain"
+      #     #      xanchor: "left"
+      #     #      y: "1"
+      #     #      yanchor: "top"
+      #      title:
+      #          text: "<b>Part2 timeline<b>"
+      #          font: 
+      #             family: 'Arial'
+      #             size: 16
+      #          xref: "x domain"
+      #          x:    "0.5"
+      #          xanchor: "center"
+      #    traces:
+      #      - name:   "Part2"
+      #        ycol: "id"
+      #        basecol: "ts_ms"
+      #        colorby: "groupnr"
+      #        onhover:
+      #         #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+      #          - id: { name: 'Step name'}
+      #          - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+      #          - cmplx: { name: 'Complexity' }
+      #        color:
+      #          - '#FF0000'
+      #          - '#00FF00'
+      #          - '#0000FF'
+      #          - '#00FFFF'
+      #          - '#FF00FF'
+      #          - '#FFFF00'
+      #       #  ycol: "nr"
+      #       #  yaxis:  "y"
+      #        type:   "bar"
+      #        orientation: 'h'
+      #        datapath: "data/_internal/steptimings/steptimeline_PART2.csv"
+      #  - name: "Part3"
+      #    xcol: "dt_ms"
+      #    height: "300px"
+      #    layout:
+      #      showlegend: false
+      #      xaxis: 
+      #          type: "date"
+      #     #  yaxis: 
+      #     #      title: 
+      #     #         text: "Substep Nr"
+      #     #  legend:
+      #     #      x: "0.0"
+      #     #      xref: "x domain"
+      #     #      xanchor: "left"
+      #     #      y: "1"
+      #     #      yanchor: "top"
+      #      title:
+      #          text: "<b>Part3 timeline<b>"
+      #          font: 
+      #             family: 'Arial'
+      #             size: 16
+      #          xref: "x domain"
+      #          x:    "0.5"
+      #          xanchor: "center"
+      #    traces:
+      #      - name:   "Part3"
+      #        ycol: "id"
+      #        basecol: "ts_ms"
+      #        colorby: "groupnr"
+      #        onhover:
+      #         #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+      #          - id: { name: 'Step name'}
+      #          - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+      #          - cmplx: { name: 'Complexity' }
+      #        color:
+      #          - '#FF0000'
+      #          - '#00FF00'
+      #          - '#0000FF'
+      #          - '#00FFFF'
+      #          - '#FF00FF'
+      #          - '#FFFF00'
+      #       #  ycol: "nr"
+      #       #  yaxis:  "y"
+      #        type:   "bar"
+      #        orientation: 'h'
+      #        datapath: "data/_internal/steptimings/steptimeline_PART3.csv"
+      #  - name: "Part4"
+      #    xcol: "dt_ms"
+      #    height: "300px"
+      #    layout:
+      #      showlegend: false
+      #      xaxis: 
+      #          type: "date"
+      #     #  yaxis: 
+      #     #      title: 
+      #     #         text: "Substep Nr"
+      #     #  legend:
+      #     #      x: "0.0"
+      #     #      xref: "x domain"
+      #     #      xanchor: "left"
+      #     #      y: "1"
+      #     #      yanchor: "top"
+      #      title:
+      #          text: "<b>Part4 timeline<b>"
+      #          font: 
+      #             family: 'Arial'
+      #             size: 16
+      #          xref: "x domain"
+      #          x:    "0.5"
+      #          xanchor: "center"
+      #    traces:
+      #      - name:   "Part4"
+      #        ycol: "id"
+      #        basecol: "ts_ms"
+      #        colorby: "groupnr"
+      #        onhover:
+      #         #  - ts_ms: { name: 'Start time', format: '|%Y/%m/%d %H:%M:%S.%L'}
+      #          - id: { name: 'Step name'}
+      #          - dt_ms: { name: 'Duration', format: ':.2f', factor: 0.001, units: 's'}
+      #          - cmplx: { name: 'Complexity' }
+      #        color:
+      #          - '#FF0000'
+      #          - '#00FF00'
+      #          - '#0000FF'
+      #          - '#00FFFF'
+      #          - '#FF00FF'
+      #          - '#FFFF00'
+      #       #  ycol: "nr"
+      #       #  yaxis:  "y"
+      #        type:   "bar"
+      #        orientation: 'h'
+      #        datapath: "data/_internal/steptimings/steptimeline_PART4.csv"

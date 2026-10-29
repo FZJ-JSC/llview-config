@@ -1,0 +1,68 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+#############
+# Footer NODE
+#############
+- footersetelem:
+    name: "Power"
+    info: "Job: #JobID#"
+    graphs: 
+       - graph:
+            name: "NodePower"
+            xcol: "date"
+            layout:
+              yaxis: 
+                  title: 
+                    text: "Node Power (W)"
+            datapath: "data/projects/#Project#/#Owner#/Nodepower_#JobID#.csv"
+            traces:
+              - trace:
+                  name:   "Node Power"
+                  ycol: "power"
+                  yaxis:  "y"
+                  type:   "scatter"
+                  color:  "#0000A0"
+    #    - graph:
+    #         name: "ChipPower"
+    #         xcol: "date"
+    #         layout:
+    #           yaxis: 
+    #               title: 
+    #                 text: "W"
+    #         datapath: "data/projects/#Project#/#Owner#/Chippower_#JobID#.csv"
+    #         traces:
+    #           - trace:
+    #               name:   "Chip GH200 Power"
+    #               ycol: "power"
+    #               yaxis:  "y"
+    #               type:   "scatter"
+    #               color:  "#0000A0"
+    #           - trace:
+    #               name:   "GPU Power"
+    #               ycol: "gpu_pu"
+    #               yaxis:  "y"
+    #               type:   "scatter"
+    #               color:  "#00A000"
+    #           - trace:
+    #               name:   "CPU Power"
+    #               ycol: "cpupower"
+    #               yaxis:  "y"
+    #               type:   "scatter"
+    #               color:  "#00A8A0"
+    #           - trace:
+    #               name:   "CPU Powercap"
+    #               ycol: "cpupowercap"
+    #               yaxis:  "y"
+    #               type:   "scatter"
+    #               color:  "#B51700"
+
+

@@ -1,0 +1,50 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+#############
+# Footer NODE
+#############
+- footersetelem:
+    name: "Node"
+    info: "Job: #JobID#"
+    graphs: 
+       - graph:
+            name: "NodePower"
+            xcol: "date"
+            layout:
+              yaxis: 
+                  title: 
+                    text: "W"
+            datapath: "data/projects/#Project#/#Owner#/Nodepower_#JobID#.csv"
+            traces:
+              - trace:
+                  name:   "power"
+                  ycol: "power"
+                  yaxis:  "y"
+                  type:   "scatter"
+                  color:  "#A00000"
+       - graph:
+            name: "NodeTemp"
+            xcol: "date"
+            layout:
+              yaxis: 
+                  title: 
+                    text: "degree C"
+            datapath: "data/projects/#Project#/#Owner#/Nodepower_#JobID#.csv"
+            traces:
+              - trace:
+                  name:   "temp"
+                  ycol: "temp"
+                  yaxis:  "y"
+                  type:   "scatter"
+                  color:  "#A00000"
+
+

@@ -1,0 +1,269 @@
+loginnodes:
+  tables:
+    - table:
+        name: login_node_stat
+        options:
+          update:
+            LML: node_stat
+            mode: replace
+        columns: 
+          - { name: systemname,        type: name_t,       LML_from: extra_systemname,   LML_default: 'unknown' }
+          - { name: nodeid,            type: name_t,       LML_from: hostname }
+          - { name: address,           type: name_t,       LML_from: extra_address,      LML_default: 'unknown' }
+          - { name: ts,                type: ts_t,         LML_from: ts,                 LML_default: -1 }
+          - { name: load_1m,           type: float_t,      LML_from: load_load_1m,       LML_default: 0.0 }
+          - { name: running_procs,     type: count_t,      LML_from: load_running_procs, LML_default: 0 }
+          - { name: total_procs,       type: count_t,      LML_from: load_total_procs,   LML_default: 0 }
+          - { name: total_cores,       type: count_t,      LML_from: total_cores,        LML_default: 1 }
+          - { name: mem_total_mb,      type: float_t,      LML_from: mem_MemTotal_mb,    LML_default: 0.0 }
+          - { name: mem_free_mb,       type: float_t,      LML_from: mem_MemFree_mb,     LML_default: 0.0 }
+          - { name: mem_avail_mb,      type: float_t,      LML_from: mem_MemAvailable_mb,LML_default: 0.0 }
+          - { name: tmp_total_mb,      type: float_t,      LML_from: tmp_total_mb,       LML_default: 0.0 }
+          - { name: tmp_used_mb,       type: float_t,      LML_from: tmp_used_mb,        LML_default: 0.0 }
+          - { name: dev_shm_total_mb,  type: float_t,      LML_from: dev_shm_total_mb,   LML_default: 0.0 }
+          - { name: dev_shm_used_mb,   type: float_t,      LML_from: dev_shm_used_mb,    LML_default: 0.0 }
+          - { name: gpu_util_pct,      type: float_t,      LML_from: extra_gpu_summary_0_utilization_gpu_pct, LML_default: 0.0 }
+          - { name: gpu_mem_used_mb,   type: float_t,      LML_from: extra_gpu_summary_0_memory_used_mb,      LML_default: 0.0 }
+          - { name: gpu_mem_total_mb,  type: float_t,      LML_from: extra_gpu_summary_0_memory_total_mb,     LML_default: 0.0 }
+
+    - table:
+        name: login_process
+        options:
+          update:
+            LML: process
+            mode: replace
+        columns: 
+          - { name: nodeid,            type: name_t,       LML_from: hostname }
+          - { name: ts,                type: ts_t,         LML_from: ts,                 LML_default: -1 }
+          - { name: pid,               type: count_t,      LML_from: pid }
+          - { name: owner,             type: name_t,       LML_from: user }
+          - { name: name,              type: name_t,       LML_from: name }
+          - { name: state,             type: shortstr_t,   LML_from: state }
+          - { name: cpu_pct,           type: float_t,      LML_from: cpu_pct,            LML_default: 0.0 }
+          - { name: mem_pct,           type: float_t,      LML_from: mem_pct,            LML_default: 0.0 }
+          - { name: mem_rss_mb,        type: float_t,      LML_from: mem_rss_mb,         LML_default: 0.0 }
+          - { name: mem_vsz_mb,        type: float_t,      LML_from: mem_vsz_mb,         LML_default: 0.0 }
+          - { name: threads,           type: count_t,      LML_from: threads,            LML_default: 0 }
+          - { name: elapsed,           type: count_t,      LML_from: elapsed,            LML_default: 0 }
+          - { name: d_state_threads,   type: count_t,      LML_from: d_state_threads,    LML_default: 0 }
+          - { name: cpu_time_secs,     type: count_t,      LML_from: cpu_time_secs,      LML_default: 0 }
+          - { name: cmd,               type: extralongstr_t, LML_from: cmd }
+          - { name: gpu_mem_used_mb,   type: float_t,      LML_from: gpu_mem_used_mb,    LML_default: 0.0 }
+
+    - table:
+        name: login_user_session
+        options:
+          update:
+            LML: user_session
+            mode: replace
+        columns: 
+          - { name: nodeid,            type: name_t,       LML_from: hostname }
+          - { name: ts,                type: ts_t,         LML_from: ts,                 LML_default: -1 }
+          - { name: owner,             type: name_t,       LML_from: username }
+          - { name: session_count,     type: count_t,      LML_from: session_count,      LML_default: 0 }
+
+    - table:
+        name: login_user_storage
+        options:
+          update:
+            LML: user_storage
+            mode: replace
+          update_trigger:
+            - login_node_overview
+            - login_process_overview
+        columns: 
+          - { name: nodeid,            type: name_t,       LML_from: hostname }
+          - { name: ts,                type: ts_t,         LML_from: ts,                 LML_default: -1 }
+          - { name: owner,             type: name_t,       LML_from: username }
+          - { name: target_path,       type: name_t,       LML_from: target_path,        LML_default: '/tmp' }
+          - { name: used_mb,           type: float_t,      LML_from: used_mb,            LML_default: 0.0 }
+
+    - table:
+        name: login_node_overview
+        options:
+          update:
+            sql_update_contents:
+              # 1. Calculates Top 3 /tmp users and total logged-in users via CTEs.
+              # 2. Aggregates the worst-case single process metrics and counts unique users running processes.
+              # 3. Joins them into the general node overview.
+              sql:  DELETE FROM login_node_overview;
+                
+                WITH RankedTmp AS (
+                  SELECT nodeid, owner, used_mb,
+                         ROW_NUMBER() OVER(PARTITION BY nodeid ORDER BY used_mb DESC) as rn
+                  FROM login_user_storage
+                  WHERE ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300 AND used_mb > 0 AND target_path = '/tmp'
+                ),
+                TopTmp AS (
+                  SELECT nodeid, GROUP_CONCAT(owner || ' (' || CAST(used_mb AS INTEGER) || ')', ', ') as top_tmp_users
+                  FROM RankedTmp
+                  WHERE rn <= 3
+                  GROUP BY nodeid
+                ),
+                RankedShm AS (
+                  SELECT nodeid, owner, used_mb,
+                         ROW_NUMBER() OVER(PARTITION BY nodeid ORDER BY used_mb DESC) as rn
+                  FROM login_user_storage
+                  WHERE ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300 AND used_mb > 0 AND target_path = '/dev/shm'
+                ),
+                TopShm AS (
+                  SELECT nodeid, GROUP_CONCAT(owner || ' (' || CAST(used_mb AS INTEGER) || ')', ', ') as top_shm_users
+                  FROM RankedShm
+                  WHERE rn <= 3
+                  GROUP BY nodeid
+                ),
+                UserCounts AS (
+                  SELECT nodeid, COUNT(DISTINCT owner) as logged_in_users
+                  FROM login_user_session
+                  WHERE ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300 AND session_count > 0
+                  GROUP BY nodeid
+                )
+                INSERT INTO login_node_overview (
+                  systemname, nodeid, address, ts, load_1m, running_procs, total_cores, load_score,
+                  logged_in_users, users_with_procs,
+                  max_proc_cpu_pct, worst_cpu_score, max_proc_d_state, d_state_score,
+                  gpu_util_pct, gpu_util_score, gpu_mem_used_mb, gpu_mem_total_mb, gpu_mem_score,
+                  mem_total_mb, mem_used_mb, mem_used_pct, mem_score,
+                  tmp_total_mb, tmp_used_mb, tmp_used_pct, tmp_score, top_tmp_users,
+                  dev_shm_total_mb, dev_shm_used_mb, dev_shm_used_pct, dev_shm_score, top_shm_users
+                )
+                SELECT 
+                  n.systemname, n.nodeid, n.address, n.ts, n.load_1m, n.running_procs, n.total_cores,
+                  CASE 
+                    WHEN n.total_cores IS NULL OR n.total_cores <= 0 THEN 0.0
+                    WHEN n.load_1m >= n.total_cores THEN 0.0
+                    WHEN n.load_1m <= 0.0 THEN 1.0
+                    ELSE 1.0 - (n.load_1m / CAST(n.total_cores AS FLOAT))
+                  END AS load_score,
+                  COALESCE(u_cnt.logged_in_users, 0),
+                  COALESCE(p_agg.users_with_procs, 0),
+                  COALESCE(p_agg.max_proc_cpu_pct, 0.0),
+                  COALESCE(p_agg.worst_cpu_score, 1.0),
+                  COALESCE(p_agg.max_proc_d_state, 0),
+                  CASE 
+                    WHEN COALESCE(p_agg.max_proc_d_state, 0) <= 10 THEN 1.0 
+                    WHEN COALESCE(p_agg.max_proc_d_state, 0) >= 100 THEN 0.0 
+                    ELSE 1.0 - (CAST(COALESCE(p_agg.max_proc_d_state, 0) - 10 AS FLOAT) / 90.0) 
+                  END AS d_state_score,
+                  n.gpu_util_pct,
+                  1.0 - (n.gpu_util_pct / 100.0) AS gpu_util_score,
+                  n.gpu_mem_used_mb,
+                  n.gpu_mem_total_mb,
+                  CASE WHEN n.gpu_mem_total_mb > 0 THEN 1.0 - (n.gpu_mem_used_mb / n.gpu_mem_total_mb) ELSE 1.0 END AS gpu_mem_score,
+                  n.mem_total_mb,
+                  (n.mem_total_mb - n.mem_avail_mb) AS mem_used_mb,
+                  CASE WHEN n.mem_total_mb > 0 THEN ((n.mem_total_mb - n.mem_avail_mb) / n.mem_total_mb * 100.0) ELSE 0.0 END AS mem_used_pct,
+                  CASE 
+                    WHEN n.mem_total_mb = 0 THEN 0.0
+                    WHEN ((n.mem_total_mb - n.mem_avail_mb) / n.mem_total_mb * 100.0) <= 50.0 THEN 1.0
+                    WHEN ((n.mem_total_mb - n.mem_avail_mb) / n.mem_total_mb * 100.0) >= 70.0 THEN 0.0
+                    ELSE 1.0 - ((((n.mem_total_mb - n.mem_avail_mb) / n.mem_total_mb * 100.0) - 50.0) / 20.0)
+                  END AS mem_score,
+                  n.tmp_total_mb, n.tmp_used_mb,
+                  CASE WHEN n.tmp_total_mb > 0 THEN (n.tmp_used_mb / n.tmp_total_mb * 100.0) ELSE 0.0 END AS tmp_used_pct,
+                  CASE WHEN n.tmp_total_mb > 0 THEN 1.0 - (n.tmp_used_mb / n.tmp_total_mb) ELSE 0.0 END AS tmp_score,
+                  COALESCE(t.top_tmp_users, '-') AS top_tmp_users,
+                  n.dev_shm_total_mb, n.dev_shm_used_mb,
+                  CASE WHEN n.dev_shm_total_mb > 0 THEN (n.dev_shm_used_mb / n.dev_shm_total_mb * 100.0) ELSE 0.0 END AS dev_shm_used_pct,
+                  CASE WHEN n.dev_shm_total_mb > 0 THEN 1.0 - (n.dev_shm_used_mb / n.dev_shm_total_mb) ELSE 0.0 END AS dev_shm_score,
+                  COALESCE(s.top_shm_users, '-') AS top_shm_users
+                FROM login_node_stat n
+                LEFT JOIN (
+                  SELECT nodeid, 
+                         COUNT(DISTINCT owner) as users_with_procs,
+                         MAX(cpu_pct) as max_proc_cpu_pct,
+                         MIN(CASE WHEN cpu_pct >= 1500.0 AND elapsed >= 3600 THEN 0.0 ELSE 1.0 END) as worst_cpu_score,
+                         MAX(d_state_threads) as max_proc_d_state
+                  FROM login_process 
+                  WHERE ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300 
+                  GROUP BY nodeid
+                ) p_agg ON n.nodeid = p_agg.nodeid
+                LEFT JOIN TopTmp t ON n.nodeid = t.nodeid
+                LEFT JOIN TopShm s ON n.nodeid = s.nodeid
+                LEFT JOIN UserCounts u_cnt ON n.nodeid = u_cnt.nodeid
+                WHERE n.ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300;
+        columns: 
+          - { name: systemname,        type: name_t }
+          - { name: nodeid,            type: name_t }
+          - { name: address,           type: name_t }
+          - { name: ts,                type: ts_t }
+          - { name: load_1m,           type: float_t }
+          - { name: running_procs,     type: count_t }
+          - { name: total_cores,       type: count_t }
+          - { name: load_score,        type: float_t }
+          - { name: logged_in_users,   type: count_t }
+          - { name: users_with_procs,  type: count_t }
+          - { name: max_proc_cpu_pct,  type: float_t }
+          - { name: worst_cpu_score,   type: float_t }
+          - { name: max_proc_d_state,  type: count_t }
+          - { name: d_state_score,     type: float_t }
+          - { name: gpu_util_pct,      type: float_t }
+          - { name: gpu_util_score,    type: float_t }
+          - { name: gpu_mem_used_mb,   type: float_t }
+          - { name: gpu_mem_total_mb,  type: float_t }
+          - { name: gpu_mem_score,     type: float_t }
+          - { name: mem_total_mb,      type: float_t }
+          - { name: mem_used_mb,       type: float_t }
+          - { name: mem_used_pct,      type: float_t }
+          - { name: mem_score,         type: float_t } 
+          - { name: tmp_total_mb,      type: float_t }
+          - { name: tmp_used_mb,       type: float_t }
+          - { name: tmp_used_pct,      type: float_t }
+          - { name: tmp_score,         type: float_t } 
+          - { name: top_tmp_users,     type: extralongstr_t }
+          - { name: dev_shm_total_mb,  type: float_t }
+          - { name: dev_shm_used_mb,   type: float_t }
+          - { name: dev_shm_used_pct,  type: float_t }
+          - { name: dev_shm_score,     type: float_t }
+          - { name: top_shm_users,     type: extralongstr_t }
+
+    - table:
+        name: login_process_overview
+        options:
+          update:
+            sql_update_contents:
+              sql: DELETE FROM login_process_overview;
+                
+                INSERT INTO login_process_overview (
+                  systemname, nodeid, owner, pid, name, cmd, 
+                  cpu_pct, elapsed, cpu_time_secs, cpu_score,
+                  threads, d_state_threads, d_state_score,
+                  mem_rss_mb, mem_score, gpu_mem_used_mb
+                )
+                SELECT 
+                  n.systemname, p.nodeid, p.owner, p.pid, p.name, p.cmd,
+                  p.cpu_pct, p.elapsed, p.cpu_time_secs,
+                  CASE WHEN p.cpu_pct >= 1500.0 AND p.elapsed >= 3600 THEN 0.0 ELSE 1.0 END AS cpu_score,
+                  p.threads, p.d_state_threads,
+                  CASE 
+                    WHEN p.d_state_threads <= 10 THEN 1.0 
+                    WHEN p.d_state_threads >= 100 THEN 0.0 
+                    ELSE 1.0 - (CAST(p.d_state_threads - 10 AS FLOAT) / 90.0) 
+                  END AS d_state_score,
+                  p.mem_rss_mb, 
+                  CASE 
+                    WHEN n.mem_total_mb IS NULL OR n.mem_total_mb = 0 THEN 0.0
+                    WHEN (p.mem_rss_mb / n.mem_total_mb * 100.0) >= 20.0 THEN 0.0
+                    ELSE 1.0 - ((p.mem_rss_mb / n.mem_total_mb * 100.0) / 20.0)
+                  END AS mem_score,
+                  p.gpu_mem_used_mb
+                FROM login_process p
+                LEFT JOIN login_node_stat n ON p.nodeid = n.nodeid
+                WHERE p.ts >= CAST(strftime('%s', 'now') AS INTEGER) - 300;
+        columns: 
+          - { name: systemname,        type: name_t }
+          - { name: nodeid,            type: name_t }
+          - { name: owner,             type: name_t }
+          - { name: pid,               type: count_t }
+          - { name: name,              type: name_t }
+          - { name: cmd,               type: extralongstr_t }
+          - { name: cpu_pct,           type: float_t }
+          - { name: elapsed,           type: count_t }
+          - { name: cpu_time_secs,     type: count_t }
+          - { name: cpu_score,         type: float_t }
+          - { name: threads,           type: count_t }
+          - { name: d_state_threads,   type: count_t }
+          - { name: d_state_score,     type: float_t }
+          - { name: mem_rss_mb,        type: float_t }
+          - { name: mem_score,         type: float_t }
+          - { name: gpu_mem_used_mb,   type: float_t }

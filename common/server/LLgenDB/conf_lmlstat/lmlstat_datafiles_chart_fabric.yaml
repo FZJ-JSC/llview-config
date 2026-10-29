@@ -1,0 +1,50 @@
+- chart:
+   name:     'fabric'
+   x-axes:
+      type: 'linear'
+      unit: 'min'
+      min: '0'
+      max: '1439'
+      ticcount: '1440'
+      # dist: 'equalnum'
+      labels:
+        - { pos: '0',        text: "- 24 h"  }
+        - { pos: '120',      text: "- 22 h"  }
+        - { pos: '240',      text: "- 20 h"  }
+        - { pos: '360',      text: "- 18 h"  }
+        - { pos: '480',      text: "- 16 h"  }
+        - { pos: '600',      text: "- 14 h"  }
+        - { pos: '720',      text: "- 12 h"  }
+        - { pos: '840',      text: "- 10 h"  }
+        - { pos: '960',      text: "-  8 h"  }
+        - { pos: '1080',     text: "-  6 h"  }
+        - { pos: '1200',     text: "-  4 h"  }
+        - { pos: '1320',     text: "-  2 h"  }
+        - { pos: '1439',     text: "now"  }
+   y-axes:
+      type: 'linear'
+      unit: 'TiB/s'
+      min: '0'
+      max: 'auto'
+      ticcount: '12'
+   traces:
+      - trace:
+        name: 'Data_in'
+        data_database:       'fabricstate'
+        data_table:          'fabric_aggr_by_ts'
+        keycol: x
+        valcol: y
+        sql: SELECT CAST(24.0*60.0 - ((TS_NOW-ts)/60.0) AS INT) as x,mbin_sum/1024.0/1024.0 as y
+             FROM fabric_aggr_by_ts
+             WHERE x>=0  
+             ORDER BY x
+      - trace:
+        name: 'Data_out'
+        data_database:       'fabricstate'
+        data_table:          'fabric_aggr_by_ts'
+        keycol: x
+        valcol: y
+        sql: SELECT CAST(24.0*60.0 - ((TS_NOW-ts)/60.0) AS INT) as x,mbout_sum/1024.0/1024.0 as y
+             FROM fabric_aggr_by_ts
+             WHERE x>=0  
+             ORDER BY x

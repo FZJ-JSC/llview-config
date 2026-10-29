@@ -1,0 +1,310 @@
+#
+#  Naming schema
+#   b -> bytes
+#   Mb -> Mbytes
+#   w -> write r -> read
+#   oc -> operation Open/close
+#   R -> Rate (MB/s oder M/s)
+
+#-------------------------------
+# tables, containing per ts info
+#-------------------------------
+- table:
+    name: fsusage_aggr_by_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_aggr_by_ts WHERE (ts >= mintsinserted);
+               DELETE FROM fsusage_aggr_by_ts WHERE (ts < mintsinserted - 72*3600);
+               INSERT INTO fsusage_aggr_by_ts (ts,dts,bw_avg,bw_min,bw_max,bw_sum,MbwR_sum,br_avg,br_min,br_max,br_sum,MbrR_sum,oc_avg,oc_min,oc_max,oc_sum,ocR_sum)
+                                              SELECT ts, MAX(dts),
+                                                     AVG(bw), MIN(bw), MAX(bw), SUM(bw), SUM(bw/1048576.0/dts),
+                                                     AVG(br), MIN(br), MAX(br), SUM(br), SUM(br/1048576.0/dts),
+                                                     AVG(oc), MIN(oc), MAX(oc), SUM(oc), SUM(oc*1.0/dts)
+                                              FROM fsusage WHERE (ts >= mintsinserted) AND (dts>0)
+                                              GROUP by ts
+    columns: 
+      - { name: ts,       type: ts_t }
+      - { name: dts,      type: count_t }
+      - { name: bw_avg,   type: bytes_t }
+      - { name: bw_min,   type: bytes_t }
+      - { name: bw_max,   type: bytes_t }
+      - { name: bw_sum,   type: bytes_t }
+      - { name: MbwR_sum, type: rate_t }
+      - { name: br_avg,   type: bytes_t }
+      - { name: br_min,   type: bytes_t }
+      - { name: br_max,   type: bytes_t }
+      - { name: br_sum,   type: bytes_t }
+      - { name: MbrR_sum, type: rate_t }
+      - { name: oc_avg,   type: ops_t }
+      - { name: oc_min,   type: ops_t }
+      - { name: oc_max,   type: ops_t }
+      - { name: oc_sum,   type: ops_t }
+      - { name: ocR_sum,  type: rate_t }
+
+- table:
+    name: fsusage_time_aggr_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          aggr_by_time_resolutions: [1, 60, 1440]     # in minutes (1 min, 1 hour, 1 day)
+          aggr_by_time_mintsvar: mintsinserted
+          sql: DELETE FROM fsusage_time_aggr_ts WHERE (ts >= mintsinserted);
+               INSERT INTO fsusage_time_aggr_ts (_time_res, _time_cnt, ts, MbwR_sum,MbrR_sum,ocR_sum)
+                                                SELECT 1,1, ts, MbwR_sum,MbrR_sum,ocR_sum
+                                                FROM fsusage_aggr_by_ts
+                                                WHERE (ts >= mintsinserted);
+          sqldebug: 0
+      archive:
+        limit_aggr_time: [ 6120, 133920, 2628000 ]     # in minutes (3 days, 93 days, 5 years)
+        limit_aggr_time_var: ts
+    columns: 
+      - { name: _time_res, type: _time_res_t }
+      - { name: _time_cnt, type: _time_cnt_t }
+      - { name: ts,        type: ts_t,     time_aggr: TS  }
+      - { name: MbwR_sum,  type: rate_t,   time_aggr: AVG }
+      - { name: MbrR_sum,  type: rate_t,   time_aggr: AVG }
+      - { name: ocR_sum,   type: rate_t,   time_aggr: AVG }
+
+#-----------------------------------
+# tables, containing per nodeid info
+#-----------------------------------
+- table:
+    name: fsusage_aggr_by_node
+    options:
+      update:
+        # updates only a subset of nodes in one step (full turn in 15 steps)
+        sql_update_contents:
+          sql: DELETE FROM fsusage_aggr_by_node
+                      WHERE nodeid IN (
+                                   SELECT nodeid FROM nodeinfo, node_update_status
+                                   WHERE nid%update_step_max=update_step and step_id=1
+                                   );
+               INSERT INTO fsusage_aggr_by_node SELECT nodeid,
+                                                       AVG(bw/1048576.0/dts), MIN(bw/1048576.0/dts), MAX(bw/1048576.0/dts), SUM(bw/1048576.0),
+                                                       AVG(br/1048576.0/dts), MIN(br/1048576.0/dts), MAX(br/dts), SUM(br/1048576.0),
+                                                       AVG(oc/dts),MIN(oc/dts),MAX(oc/dts),SUM(oc/1000000.0)
+                                                FROM fsusage 
+                                                WHERE (dts>0) AND
+                                                      nodeid IN (
+                                                      SELECT nodeid FROM nodeinfo, node_update_status
+                                                      WHERE nid%update_step_max=update_step and step_id=1
+                                                      )
+                                                GROUP by nodeid
+    columns: 
+      - { name: nodeid,   type: nodeid_t }
+      - { name: MbwR_avg,  type: rate_t }
+      - { name: MbwR_min,  type: rate_t }
+      - { name: MbwR_max,  type: rate_t }
+      - { name: Mbw_sum,   type: mb_t }
+      - { name: MbrR_avg,  type: rate_t }
+      - { name: MbrR_min,  type: rate_t }
+      - { name: MbrR_max,  type: rate_t }
+      - { name: Mbr_sum,   type: mb_t }
+      - { name: ocR_avg, type: rate_t }
+      - { name: ocR_min, type: rate_t }
+      - { name: ocR_max, type: rate_t }
+      - { name: Moc_sum,  type: Mops_t }
+
+
+#------------------
+# login node tables
+#------------------
+- table:
+    name: fsusage_login_time_aggr
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 1
+          vars: mintsinserted
+          aggr_by_time_resolutions: [1, 60, 1440]     # in minutes (1 min, 1 hour, 1 day)
+          aggr_by_time_mintsvar: mintsinserted
+          sql: 
+               INSERT INTO fsusage_login_time_aggr
+                           (_time_res, _time_cnt, ts, nodeid, dts_sum,
+                             MbwR_avg, MbwR_min, MbwR_max, Mbw_sum,
+                             MbrR_avg, MbrR_min, MbrR_max, Mbr_sum,
+                             ocR_avg, ocR_min, ocR_max, Moc_sum      
+                             )
+                                 SELECT 1, 1,
+                                        ts, nodeid, dts,
+                                        bw/1048576.0/dts, bw/1048576.0/dts, bw/1048576.0/dts, bw/1048576.0,
+                                        br/1048576.0/dts, br/1048576.0/dts, br/1048576.0/dts, br/1048576.0,
+                                        oc/dts,oc/dts,oc/dts,oc/1000000.0
+                                 FROM fsusage
+                                 WHERE (ts >=  mintsinserted) and (nodeid like "jpbl%") and (dts>0);
+      index: nodeid,ts
+      archive:
+        limit_aggr_time: [ 6120, 133920, 2628000 ]     # in minutes (3 days, 93 days, 5 years)
+        limit_aggr_time_var: ts
+    columns: 
+      - { name: _time_res,       type: _time_res_t }
+      - { name: _time_cnt,       type: _time_cnt_t }
+      - { name: ts,              type: ts_t,      time_aggr: TS  }
+      - { name: nodeid,          type: nodeid_t,  time_aggr: KEY }
+      - { name: dts_sum,         type: count_t,   time_aggr: SUM }
+      - { name: MbwR_avg,        type: rate_t,    time_aggr: AVG }
+      - { name: MbwR_min,        type: rate_t,    time_aggr: MIN }
+      - { name: MbwR_max,        type: rate_t,    time_aggr: MAX }
+      - { name: Mbw_sum,         type: mb_t,      time_aggr: SUM }
+      - { name: MbrR_avg,        type: rate_t,    time_aggr: AVG }
+      - { name: MbrR_min,        type: rate_t,    time_aggr: MIN }
+      - { name: MbrR_max,        type: rate_t,    time_aggr: MAX }
+      - { name: Mbr_sum,         type: mb_t,      time_aggr: SUM }
+      - { name: ocR_avg,         type: rate_t,    time_aggr: AVG }
+      - { name: ocR_min,         type: rate_t,    time_aggr: MIN }
+      - { name: ocR_max,         type: rate_t,    time_aggr: MAX }
+      - { name: Moc_sum,         type: Mops_t,    time_aggr: SUM }
+
+
+#----------------------------------
+# tables, containing per jobid info
+#----------------------------------
+- table:
+    name: fsusage_by_jobid_nodeid_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_by_jobid_nodeid_ts WHERE (ts >= mintsinserted);
+               INSERT INTO fsusage_by_jobid_nodeid_ts SELECT jnt.jobid, fs.ts, fs.nodeid, fs.dts,
+                                                      fs.bw/1048576.0,
+                                                      fs.br/1048576.0,
+                                                      fs.oc/1000000.0,
+                                                      fs.bw/1048576.0/fs.dts,
+                                                      fs.br/1048576.0/fs.dts,
+                                                      fs.oc/fs.dts
+                           FROM fsusage_jobmap_by_nd_ts jnt,
+                                fsusage fs
+                           WHERE  (fs.ts >= mintsinserted)
+                                  AND (fs.ts = jnt.ts) AND (jnt.nodeid=fs.nodeid) AND (fs.dts>0) 
+      archive:
+        limit: max(ts)-25h
+      index: jobid,ts
+    columns: 
+      - { name: jobid,       type: jobid_t }
+      - { name: ts,          type: ts_t }
+      - { name: nodeid,      type: nodeid_t }
+      - { name: dts,         type: count_t }
+      - { name: Mbw,         type: mb_t }
+      - { name: Mbr,         type: mb_t }
+      - { name: Moc,        type: Mops_t }
+      - { name: MbwR,        type: rate_t }
+      - { name: MbrR,        type: rate_t }
+      - { name: ocR,       type: rate_t }
+      
+- table:
+    name: fsusage_aggr_by_jobid_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_aggr_by_jobid_ts WHERE (ts >= mintsinserted);
+               INSERT INTO fsusage_aggr_by_jobid_ts
+                    SELECT jobid,
+                           ts, MAX(dts),
+                           AVG(MbwR),   MIN(MbwR),    MAX(MbwR),  SUM(Mbw),
+                           AVG(MbrR),   MIN(MbrR),    MAX(MbrR),  SUM(Mbr), 
+                           AVG(ocR),  MIN(ocR),   MAX(ocR), SUM(Moc)
+                           FROM fsusage_by_jobid_nodeid_ts
+                           WHERE (ts >= mintsinserted) 
+                           GROUP by jobid,ts;
+      archive:
+        limit: max(ts)-25h
+    columns: 
+      - { name: jobid,     type: jobid_t }
+      - { name: ts,        type: ts_t    }
+      - { name: dts,       type: count_t }
+      - { name: MbwR_avg,  type: rate_t }
+      - { name: MbwR_min,  type: rate_t }
+      - { name: MbwR_max,  type: rate_t }
+      - { name: Mbw_sum,   type: mb_t }
+      - { name: MbrR_avg,  type: rate_t }
+      - { name: MbrR_min,  type: rate_t }
+      - { name: MbrR_max,  type: rate_t }
+      - { name: Mbr_sum,   type: mb_t }
+      - { name: ocR_avg, type: rate_t }
+      - { name: ocR_min, type: rate_t }
+      - { name: ocR_max, type: rate_t }
+      - { name: Moc_sum,  type: Mops_t }
+
+- table:
+    name: fsusage_aggr_by_jobid
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_aggr_by_jobid WHERE jobid IN (SELECT jobid from fsusage_current_jobid );
+               INSERT INTO fsusage_aggr_by_jobid
+                    SELECT fs.jobid, MAX(fs.ts), COUNT(fs.ts),
+                           AVG(MbwR_avg), MIN(MbwR_min),  MAX(MbwR_max),  SUM(Mbw_sum),
+                           AVG(MbrR_avg), MIN(MbrR_min),  MAX(MbrR_max),  SUM(Mbr_sum),
+                           AVG(ocR_avg), MIN(ocR_min),  MAX(ocR_max),  SUM(Moc_sum)
+                           FROM fsusage_aggr_by_jobid_ts fs
+                           WHERE jobid IN ( SELECT jobid from fsusage_current_jobid ) AND
+                           ( (fs.MbwR_max+fs.MbrR_max)>0.000001 OR (fs.ocR_max>0.001) )
+                           GROUP by fs.jobid;
+    columns: 
+      - { name: jobid,      type: jobid_t }
+      - { name: fslastts,   type: ts_t    }
+      - { name: fs_ndps,    type: count_t    }
+      - { name: MbwR_avg,   type: rate_t }
+      - { name: MbwR_min,   type: rate_t }
+      - { name: MbwR_max,   type: rate_t }
+      - { name: Mbw_sum,    type: mb_t }
+      - { name: MbrR_avg,   type: rate_t }
+      - { name: MbrR_min,   type: rate_t }
+      - { name: MbrR_max,   type: rate_t }
+      - { name: Mbr_sum,    type: mb_t }
+      - { name: ocR_avg,    type: rate_t }
+      - { name: ocR_min,    type: rate_t }
+      - { name: ocR_max,    type: rate_t }
+      - { name: Moc_sum,    type: Mops_t }
+
+#----------------------------
+# temp. tables to speed joins 
+#----------------------------
+- table:
+    name: fsusage_jobmap_by_nd_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_jobmap_by_nd_ts;
+               INSERT INTO fsusage_jobmap_by_nd_ts
+                    SELECT jt.jobid,
+                           jn.nodeid,
+                           jt.ts
+                           FROM jobnodemap jn, jobtsmap jt
+                           WHERE (jt.ts >= mintsinserted) AND (jt.jobid=jn.jobid);
+      update_trigger:
+    columns: 
+      - { name: jobid,    type: jobid_t }
+      - { name: nodeid,   type: nodeid_t }
+      - { name: ts,       type: ts_t    }
+- table:
+    name: fsusage_current_jobid
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM fsusage_current_jobid;
+               INSERT INTO fsusage_current_jobid
+                    SELECT jt.jobid
+                           FROM jobtsmap jt
+                           WHERE (jt.ts >= mintsinserted);
+      update_trigger:
+    columns: 
+      - { name: jobid,    type: jobid_t }
+
+# Update tables: (fill new time_aggr table with data from old span tables)
+# one line:
+# select _time_res,count(*),sum(_time_cnt),min(ts),max(ts),(max(ts)-min(ts))/60.0/60.0/24.0 from fsusage_time_aggr_ts   group by _time_res;insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 1,1,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts where ts<(select min(ts) from fsusage_time_aggr_ts where (_time_res=1));insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 60,60,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts_hourly where ts<=(select min(ts) from fsusage_time_aggr_ts where (_time_res=60)); insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 1440,1440,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts_daily where ts<=(select min(ts) from fsusage_time_aggr_ts where (_time_res=1440));select _time_res,count(*),sum(_time_cnt),min(ts),max(ts),(max(ts)-min(ts))/60.0/60.0/24.0 from fsusage_time_aggr_ts   group by _time_res;
+# per table
+## insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 1,1,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts where ts<(select min(ts) from fsusage_time_aggr_ts where (_time_res=1));
+## insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 60,60,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts_hourly where ts<=(select min(ts) from fsusage_time_aggr_ts where (_time_res=60));
+## insert into fsusage_time_aggr_ts (_time_res,_time_cnt,ts, MbwR_sum,MbrR_sum,ocR_sum) select 1440,1440,ts, MbwR_sum,MbrR_sum,ocR_sum from fsusage_aggr_by_ts_daily where ts<=(select min(ts) from fsusage_time_aggr_ts where (_time_res=1440));
+## Status:
+##  select _time_res,count(*),sum(_time_cnt),min(ts),max(ts),(max(ts)-min(ts))/60.0/60.0/24.0 from fsusage_time_aggr_ts   group by _time_res;

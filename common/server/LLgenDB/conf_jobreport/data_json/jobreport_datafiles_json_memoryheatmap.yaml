@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+
+- dataset:
+    name: support_memheatmap
+    set:        memheatmap
+    filepath:   '$outputdir/_sysstat/memheatmap.json.gz'
+    data_database:   loadmemstate
+    data_table:      loadmem_heatmap_node_mem_cls
+    stat_table:      datasetstat_heatmap
+    stat_database:   jobreport_json_stat
+    format:         'json'
+    columns:        'memcls,n_1,n_2,n_3,n_4,n_5,n_6,n_7,n_8,n_9,n_10,n_12,n_16,n_24,
+                                  n_32,n_48,n_64,n_96,n_128,n_192,n_256,n_384,n_512,n_768,
+                                  n_1024,n_2048,n_4096,n_8192,n_all'
+    column_convert: ''
+    order:          "memcls INCR"

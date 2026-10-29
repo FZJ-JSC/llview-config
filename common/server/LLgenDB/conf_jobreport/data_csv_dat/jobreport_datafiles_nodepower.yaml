@@ -1,0 +1,47 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+
+- dataset:
+    name: nodepower_node_dat
+    set:        nodepower
+    FORALL:     'P,U,J:VAR_project_user_job'
+    filepath:   '$outputdir/projects/$P/$U/Nodepower_${J}_node.dat'
+    columns:        'jobid,ts,nodeid,power,temp'
+    column_filemap: 'J:jobid'
+    column_ts:      'ts'
+    format:         'dat'
+    format_str:      '%-10s %10d %12s %10.3f %10.3f'
+    format_header:   '%-10s %10s %12s %10s %10s'
+    column_filemap: 'J:jobid'
+    data_database:   powerstate
+    data_table:      nodepower_by_jobid_nodeid_ts
+    stat_database:   jobreport_stat_nodepower
+    stat_table:      datasetstat_node_dat
+    mngt_actions:   'compress_finished_files,archive_jobs_files'
+
+- dataset:
+    name: nodepower_csv
+    set:        nodepower
+    FORALL:     'P,U,J:VAR_project_user_job'
+    filepath:   '$outputdir/projects/$P/$U/Nodepower_${J}.csv'
+    columns:        'ts,power_min,power_avg,power_max,temp_min,temp_avg,temp_max'
+    header:         'date,power,temp'
+    column_convert: 'ts->todate_1,power_min->cut3digits,power_avg->cut3digits,power_max->cut3digits
+                                  temp_min->cut3digits,temp_avg->cut3digits,temp_max->cut3digits'
+    format_str:      '%s,%f;%f;%f,%f;%f;%f'
+    column_filemap: 'J:jobid'
+    column_ts:      'ts'
+    format:         'csv'
+    column_filemap: 'J:jobid'
+    data_database:   powerstate
+    data_table:      nodepower_aggr_by_jobid_ts
+    stat_database:   jobreport_stat_nodepower
+    stat_table:      datasetstat_csv
+    mngt_actions:   'compress_finished_files,archive_jobs_files'

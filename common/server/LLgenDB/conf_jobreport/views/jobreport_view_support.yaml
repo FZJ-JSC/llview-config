@@ -1,0 +1,512 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+###############
+# Support Views
+###############
+- view:
+    name:          "support"
+    filepath:      "$outputdir/ll/support.json"
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_views
+    info:          "data/_info/info.json"
+    # Demo mode
+    # demo:          true
+    # Logo on header (right)
+    logo:          "img/llview_logo_white.svg"
+    # Link when clicking on image
+    home:          "login.php"
+    # Field to use to search on other pages (e.g. History) - needs mapjobid_to_day
+    search_field:  "JobID"
+    # JSON file on the server with the status of the system 
+    # A link can be added to use when there's no systems menu,
+    # replacing '@@id@@' for the id on the JSON object
+    status: 
+      file: '/status.json'
+      link: 'https://status.jsc.fz-juelich.de/services/@@id@@'
+    # When more than one system is available, a system selector can be added on the header
+    # systems: 
+    #   JUWELS BOOSTER DEMO: 'juwels_booster_demo'
+    #   JUWELS BOOSTER: 'juwels_booster'
+    #   JUWELS: 'juwels'
+    #   JURECA-DC: 'jurecadc'
+    #   JUSUF: 'jusuf'
+    #   JUPITER: 'jupiter'
+    #   JUPITER DEMO: 'jupiter_demo'
+    #   DEEP: 'deep'
+    data:
+        system:     "$systemname"
+        permission: "support"
+    pages:
+       - page:
+           name:    "Live"
+           section: "live"
+           icon:     "television"
+           template: "llview"
+           ref: ["llview"]
+           data:
+             view: "batch"
+       - page:
+           name: "System"
+           section: "system"
+           icon: "cog"
+           pages:
+              - page:
+                  name: "Usage"
+                  section: "sysoverview"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_sysoverview.json"
+              - page:
+                  name: "Login Nodes"
+                  section: "loginnodes"
+                  description: "Real-time monitoring of login nodes, displaying system load, memory, /tmp usage, and detailed process statistics per user."
+                  tabs:
+                  - name: "Overview"
+                    section: "login_overview"
+                    description: "High-level health and resource usage overview across all login nodes."
+                    default: false
+                    template: "/data/LLtemplates/login_node_overview"
+                    context: "data/support/login_node_overview.json"
+                    ref: [ datatable ]
+                    data:
+                      default_columns: [ 'Login Node', 'Address', 'Users', 'CPU', 'GPU', 'Process Warnings', 'Memory', 'Temporary Storage' ]
+                  - name: "All"
+                    section: "all_loginnodes"
+                    description: "Active users and process statistics on all login nodes."
+                    default: false
+                    template: "/data/LLtemplates/login_process_overview"
+                    context: "data/_queued/login_process_all.json"
+                    ref: [ datatable ]
+                    data:
+                      default_columns: [ 'PID', 'Host', 'Process Info', 'CPU Usage', 'Threads', 'Memory' ]
+                  %include "./loginnode_tabs.yaml"
+              - page:
+                  name: "Power"
+                  section: "syspower"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_syspower.json"
+              - page:
+                  name: "Energy"
+                  section: "sysenergy"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_sysenergy.json"
+              - page:
+                  name: "Rack-Power"
+                  section: "sysrackpwr"
+                  template: "/data/LLtemplates/sysrackpwr"
+                  context: "data/_sysstat/sysrackpwr.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_sysrackpwr.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ sysstat ]
+    #           - page:
+    #               name: "Environment"
+    #               section: "sysenv"
+    #               default: false
+    #               graph_page_config: "/data/ll/graphpage_sysenv.json"
+              - page:
+                  name: "I/O Activity"
+                  section: "sysio"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_sysio.json"
+              - page:
+                  name: "Interconnect"
+                  section: "sysinterconnect"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_sysinterconnect.json"
+              # - page:
+              #     name: "Statistics"
+              #     description: "Graphics containing statistics on memory and node usage"
+              #     section: "sysstatistics"
+              #     default: false
+              #     graph_page_config: "/data/ll/graphpage_sysstatistics.json"
+              - page:
+                  name: "Statistics"
+                  section: "stats"
+                  description: "Statistics of jobs and applications on the system."
+                  tabs:
+                  - name: "Applications"
+                    section: "app_stats"
+                    description: "Application usage statistics on the system in the last 72 hours, obtained from Slurm job steps (i.e., executed by srun). Node-h column for an application is the sum of the node usage of each job step running that application, multiplied by the step duration in hours."
+                    default: false
+                    template: "/data/LLtemplates/app_stats"
+                    context: "data/_sysstat/app_stats.json"
+                    ref: [ datatable ]
+                    data:
+                      default_columns: [ 'Application', 'Usage' ]
+                  - name: "Job Distribution"
+                    section: "job_dist"
+                    description: "Resource utilization map of jobs in the last 3 weeks (with runtime above 5min) against different performance metrics. The axes metrics are selectable to display different workload distribution landscapes."
+                    default: false
+                    graph_page_config: "/data/ll/graphpage_job_dist.json"
+                  - name: "Job Histograms"
+                    section: "job_histograms"
+                    description: "Histograms showing the distribution of jobs in the last 3 weeks."
+                    default: false
+                    graph_page_config: "/data/ll/graphpage_job_histograms.json"
+              - page:
+                  name: "Detailed Usage"
+                  section: "sysstat"
+                  template: "/data/LLtemplates/sysstat"
+                  context: "data/_sysstat/sysstat.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_sysstat.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ sysstat ]
+              - page:
+                  name: "Node Errors"
+                  description: "Tables containing information about node errors detected in the system."
+                  section: "sysnodeerrmain"
+                  tabs:
+                  - name: "Histogram"
+                    description: "Histogram showing the total number of errors logged per node over the last 3 weeks, stacked by error type."
+                    section: "sysnodeerrcntgraph"
+                    default: false
+                    graph_page_config: "/data/ll/graphpage_nodeerrcnt.json"
+                  - name: "Heatmap"
+                    description: "Daily heatmap tracking node instability. Highlights nodes experiencing recurrent or sustained errors over the last 3 weeks."
+                    section: "sysnodeerrcntheatmap"
+                    default: false
+                    graph_page_config: "/data/ll/graphpage_nodeerrcnt_heatmap.json"
+                  - name: "Details"
+                    description: "Table containing information about all system errors detected in the system on the last 3 weeks."
+                    context: "data/_sysstat/nodeerr.json" 
+                    ref: [ datatable ]
+                    data:
+                      default_columns: [ Date, Node, JobID, 'Process Info', 'Extended Info', Message ]
+                    section: "sysnodeerr"
+                    template: "/data/LLtemplates/nodeerr"
+                    default: false
+              - page:
+                  name: "Offline Nodes"
+                  section: "nodereason"
+                  template: "/data/LLtemplates/nodereasons"
+                  context: "data/_queued/nodereasons.json"
+                  description: "List of currently unavailable compute nodes (e.g., down, drained, offline) and the recorded administrative or hardware reasons for their state."
+                  default: false
+                  ref: [ datatable ]
+                  data:
+                    default_columns: [ 'Node ID', 'State Info', 'Event Timeline', 'Reason']
+              - page:
+                  name: "Core Usage Pattern"
+                  section: "corepattern"
+                  template: "/data/LLtemplates/corepattern"
+                  context: "data/_sysstat/CorePattern.json"
+                  description: "Statistics on the core usage patterns over the last day."
+                  default: false
+                  footer_graph_config: "/data/ll/footer_corepattern.json"
+                  ref: [ datatable ]
+                  data:
+                    default_columns: [ "Pattern", "Usage Stats" ]
+              - page:
+                  name: "Memory Heatmap"
+                  description: "Heatmaps showing the memory and node usage in different categories. Selecting each 'Memory Class' row, the footer presents time-series of each job class for the last three days."
+                  section: "memheatmap"
+                  template: "/data/LLtemplates/memheatmap"
+                  context: "data/_sysstat/memheatmap.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_memheatmap.json"
+                  ref: [ datatable ]
+                  # data:
+                  #   default_columns: [ heatmap ]
+            #   - page:
+            #       name: "System Test"
+            #       section: "systest"
+            #       default: false
+            #       graph_page_config: "/data/ll/graphpage_SYSTEM.json"
+       - page:
+           name: "Queue"
+           section: "queue"
+           icon: "list"
+           pages:
+              # - page:
+              #     name: "Overview"
+              #     section: "queueoverview"
+              #     template: "/data/LLtemplates/queuedjobslist"
+              #     context: "data/_queued/queued_jobs.json"
+              #     default: false
+              #     ref: [ datatable ]
+              #     data:
+              #       default_columns: [ "JobID", "General Info", "Mentor", "Scheduler", "Array" ]
+              - page:
+                  name: "Details (All Jobs)"
+                  section: "queuedetails"
+                  template: "/data/LLtemplates/queueddetails"
+                  context: "data/support/queueddetails.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_queuedjobs.json"
+                  ref: [ datatable ]
+                  data:
+                    default_columns: [ "JobID", "General Info", "Mentor", "Queue Status", "Scheduler", "Array", "Chain" ]
+                    options:
+                      # Shortcut buttons rendered directly inside the quickfilter bar
+                      buttons:
+                        - label: 'P'
+                          color: '#daa621'
+                          tooltip: 'Toggle filter for PENDING jobs'
+                          filter: { 'State': 'Pending' }
+                        - label: 'C'
+                          color: 'green'
+                          tooltip: 'Toggle filter for COMPLETED jobs'
+                          filter: { 'State': 'Completed' }
+                        - label: 'F'
+                          color: 'red'
+                          tooltip: 'Toggle filter for FAILED jobs'
+                          filter: { 'State': 'Failed' }
+                        - label: 'R'
+                          color: 'blue'
+                          tooltip: 'Toggle filter for RUNNING jobs'
+                          filter: { 'State': 'Running' }
+              - page:
+                  name: "Statistics"
+                  section: "queuestatistics"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_queuestatistics.json"
+              - page:
+                  name: "Reservations"
+                  section: "reservationoverview"
+                  template: "/data/LLtemplates/reservationlist"
+                  context: "data/_queued/reservations.json"
+                  description: "List of active, upcoming, and historical resource reservations across the system."
+                  default: false
+                  ref: [ datatable ]
+                  data:
+                    default_columns: [ 'Reservation Name', 'General Info', 'Scheduler', 'Resources']
+       - page:
+          name: "Workflows"
+          section: "workflows"
+          template: "/data/LLtemplates/workflows"
+          icon: "list-alt"
+          context: "data/support/workflows.json"
+          default: "false"
+          ref:
+            - datatable
+          data:
+            default_columns: [ WorkflowID, 'General Info', Mentor, Scheduler, 'Load/Memory', 'JobID List'  ]
+      #  - page:
+      #       name: "Active jobs"
+      #       section: "running_jobs"
+      #       template: "/data/LLtemplates/joblist"
+      #       icon: "play"
+      #       context: "data/support/running.json"
+      #       default: true
+      #       footer_graph_config: "/data/ll/footer_CPU_GPU.json"
+      #       ref: [ table ]
+      #       data:
+      #         default_columns: [ 'JobID', 'General Info', 'Mentor', 'Scheduler', 'Core Usage', 'Load/Memory', "Power/Energy", 'GPU', 'Status', 'Total Score', 'Reports' ]
+      #  - page:
+      #       name: "History"
+      #       section: "history_three_weeks"
+      #       template: "/data/LLtemplates/joblist_history"
+      #       icon: "calendar"
+      #       context: "data/support/today.json"
+      #       default: false
+      #       footer_graph_config: "/data/ll/footer_CPU_GPU.json"
+      #       ref: [ table ]
+      #       scripts: [ "joblist_history.js" ]
+      #       functions: [ "init_dates" ]
+      #       data:
+      #         default_columns: [ 'JobID', 'General Info', 'Mentor', 'Scheduler', 'Core Usage', 'Load/Memory', "Power/Energy", 'GPU', 'Status', 'Total Score', 'Reports' ]
+       - page:
+            name: "Jobs"
+            section: "jobs"
+            description: "This page contains all jobs (with more than 1-min of runtime) that are running or finished running on the system in the last three weeks."
+            template: "/data/LLtemplates/datatable"
+            icon: "play"
+            context: "data/support/all.csv"
+            default: true
+            footer_graph_config: "/data/ll/footer_CPU_GPU.json"
+            ref: [ datatable ]
+            data:
+              default_columns: [ 'JobID', 'General Info', 'Mentor', 'Scheduler', 'Core Usage', 'Load/Memory', "Power/Energy", 'GPU', 'Status', 'Total Score', 'Reports' ]
+              options:
+                # Shortcut buttons rendered directly inside the quickfilter bar
+                buttons:
+                  - label: 'C'
+                    color: 'green'
+                    tooltip: 'Toggle filter for COMPLETED jobs'
+                    filter: { 'State': 'COMPLETED' }
+                  - label: 'F'
+                    color: 'red'
+                    tooltip: 'Toggle filter for FAILED jobs'
+                    filter: { 'State': 'FAILED' }
+                  - label: 'R'
+                    color: 'blue'
+                    tooltip: 'Toggle filter for RUNNING jobs'
+                    filter: { 'State': 'RUNNING' }
+                # Checkbox options table rendered when clicking '+'
+                table:
+                  'Start Date':
+                    'Today': {'Start Date': 'new Date().toISOString().slice(0, 10)'}
+                    'Yesterday': {'Start Date': 'new Date(Date.now() - 86400000).toISOString().slice(0, 10)'}
+                  'End Date (est)':
+                    'Tomorrow': {'End Date (est)': 'new Date(Date.now() + 86400000).toISOString().slice(0, 10)'}
+                    'Today': {'End Date (est)': 'new Date().toISOString().slice(0, 10)'}
+                    'Yesterday': {'End Date (est)': 'new Date(Date.now() - 86400000).toISOString().slice(0, 10)'}
+                  'State':
+                    'RUNNING': {'State': 'RUNNING'}
+                    'COMPLETED': {'State': 'COMPLETED'}
+                    'FAILED': {'State': 'FAILED'}
+       - page:
+           name: "Projects&Roles"
+           section: "roles"
+           icon: "user"
+           pages:
+              - page:
+                  name: "Projects"
+                  section: "Projects"
+                  template: "/data/LLtemplates/projectlist"
+                  context: "data/support/projectlist.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_projstat.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ project ]
+              - page:
+                  name: "Users"
+                  section: "Users"
+                  tabs:
+                  - name: "Active"
+                    section: "activeUsers"
+                    description: "Information and statistics on users that are currenty active on the system"
+                    default: false
+                    template: "/data/LLtemplates/ActiveUser"
+                    context: "data/support/active_user.json"
+                    ref: [ table ]
+                    data:
+                      default_columns: [ user ]
+                  - name: "All"
+                    section: "allUsers"
+                    description: "Information and statistics on all users"
+                    default: false
+                    template: "/data/LLtemplates/AllUser"
+                    context: "data/support/all_user.json"
+                    ref: [ table ]
+                    data:
+                      default_columns: [ user ]
+              # - page:
+              #     name: "Users (Active)"
+              #     section: "ActiveUser"
+              #     template: "/data/LLtemplates/ActiveUser"
+              #     context: "data/support/active_user.json"
+              #     default: false
+              #     ref: [ table ]
+              #     data:
+              #       default_columns: [ user ]
+              # - page:
+              #     name: "Users (All)"
+              #     section: "AllUser"
+              #     template: "/data/LLtemplates/AllUser"
+              #     context: "data/support/all_user.json"
+              #     default: false
+              #     ref: [ table ]
+              #     data:
+              #       default_columns: [ user ]
+              - page:
+                  name: "Mentors"
+                  section: "AllMentors"
+                  description: "Information and statistics on all mentors"
+                  template: "/data/LLtemplates/AllMentor"
+                  context: "data/support/all_mentors.json"
+                  default: false
+                  ref: [ table ]
+                  data:
+                    default_columns: [ user ]
+              - page:
+                  name: "PIs"
+                  section: "AllPIs"
+                  description: "Information and statistics on all principal investigators (project leaders)"
+                  template: "/data/LLtemplates/AllPI"
+                  context: "data/support/all_PIs.json"
+                  default: false
+                  ref: [ table ]
+                  data:
+                    default_columns: [ user ]
+              - page:
+                  name: "PAs"
+                  section: "AllPAs"
+                  description: "Information and statistics on all project administrators"
+                  template: "/data/LLtemplates/AllPA"
+                  context: "data/support/all_PAs.json"
+                  default: false
+                  ref: [ table ]
+                  data:
+                    default_columns: [ user ]
+      #  %include "../../conf_cb/tab_cb.yaml"
+       - page:
+           name: "Internal"
+           section: "internal"
+           icon: "database"
+           pages:
+              - page:
+                  name: "Status Overview"
+                  section: "internalstat"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_internalstat.json"
+              - page:
+                  name: "DB Statistics"
+                  section: "DBstat"
+                  template: "/data/LLtemplates/DBstat"
+                  context: "data/_internal/DBstat.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_DBstat.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ DBstat ]
+              - page:
+                  name: "DB Dependency Graphs"
+                  section: "DBgraph"
+                  template: "/data/LLtemplates/DBgraph"
+                  context: "data/_internal/DBgraph.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_DBgraph.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ DBgraph ]
+              - page:
+                  name: "Step Timings"
+                  section: "steptimings"
+                  template: "/data/LLtemplates/steptimings"
+                  context: "data/_internal/steptimings.json"
+                  default: false
+                  footer_graph_config: "/data/ll/footer_steptimings.json"
+                  ref: [ table ]
+                  data:
+                    default_columns: [ stts, stts_stat ]
+              - page:
+                  name: "Timelines"
+                  section: "steptimelines"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_steptimelines.json"
+              - page:
+                  name: "Transfer"
+                  section: "internaltransfer"
+                  default: false
+                  graph_page_config: "/data/ll/graphpage_internaltransfer.json"
+              - page:
+                  name: "Joblist Source Stat"
+                  section: "joblist_source_stat"
+                  default: false
+                  template: "/data/LLtemplates/joblist_source_stat"
+                  context: "data/_internal/joblist_stat_by_source.json"
+                  ref: [ table ]
+       - page:
+            name: "KontView"
+            section: "kontview"
+            icon: "address-card"
+            href: "https://judoor.fz-juelich.de/kontview/index.html?config=kontview_support#page=kont_projects"
+       - page:
+           name: "Help"
+           section: "help"
+           icon: "question"
+           href: "https://llview.fz-juelich.de/docu/"

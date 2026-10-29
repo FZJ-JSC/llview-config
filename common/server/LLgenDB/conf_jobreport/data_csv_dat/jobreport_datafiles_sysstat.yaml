@@ -1,0 +1,74 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+
+- dataset:
+    name: sysenvstat_csv
+    set:        sysstat
+    FORALL:     'S:VAR_sysenvstat_system'
+    filepath:   '$outputdir/_sysstat/sysenvstat_${S}.csv'
+    columns:        'ts,power_avg,water_flowrate_avg,water_inlet_temp_avg,water_outlet_temp_avg,water_power_avg'
+    header:         'date,power,water_flowrate,water_inlet_temp,water_outlet_temp,water_power'
+    column_convert: 'ts->todate_1'
+    column_filemap: 'S:sysname'
+    format_str:      '%s,%f,%f,%f,%f,%f'
+    column_ts:      'ts'
+    format:         'csv'
+    renew:          'daily(14:00)'
+    time_aggr:      'span'
+    data_database:   sysstatstate
+    data_table:      sysstat_time_aggr
+    stat_database:   jobreport_stat_sysstat
+    stat_table:      datasetstat
+    
+- dataset:
+    name: syscorepattern_csv
+    set:        sysstat
+    FORALL:     'P,G:VAR_corepattern'
+    filepath:   '$outputdir/_sysstat/cp/syscorepattern_${P}_${G}.csv'
+    columns:        'ts,phys_coreid,smtid,usage_min,usage_avg,usage_max'
+    header:         'date,coreid,smtid,usage_min,usage_avg,usage_max'
+    column_convert: 'ts->todate_1,usage_min->toPercent,usage_avg->toPercent,usage_max->toPercent'
+    format_str:      '%s,%d,%d,%f,%f,%f'
+    column_ts:      'ts'
+    format:         'csv'
+    renew:          'always'
+    sql_where:      "pid=${P} AND gpu=${G}"
+    data_database:   pcpucoresstate
+    data_table:      pcpucores_time_aggr_coreid_span_avg
+    stat_database:   jobreport_stat_sysstat
+    stat_table:      datasetstat
+    mngt_actions:   'remove_older_3days'
+
+- dataset:
+    name:            nodeerr_cnt_by_day
+    set:             csv_nodeerr_cnt
+    filepath:       '$outputdir/_sysstat/nodeerr_cnt_by_day.csv'
+    data_database:   nodeerr
+    data_table:      nodeerr_stat_by_day
+    stat_table:      datasetstat_nodeerr_cnt
+    stat_database:   jobreport_json_stat
+    format:         'csv'
+    columns:        'nodeid, tcnt, day'
+    header:         'nodeid,cnt,date'
+    # Sort chronologically, then alphabetically by node
+    order:          "day ASC, nodeid ASC"
+    sql_where:      "nodeid NOT LIKE 'jwc%'"
+
+- dataset:
+    name:           nodeerr_cnt_by_msgcls_csv
+    set:            csv_nodeerr_cnt
+    filepath:       '$outputdir/_sysstat/nodeerr_cnt_by_msgcls.csv'
+    data_database:  nodeerr
+    data_table:     nodeerr_stat_by_node_by_msgcls
+    stat_table:     datasetstat_nodeerr_cnt
+    stat_database:  jobreport_json_stat
+    format:         'csv'
+    columns:        'nodeid, c0_cnt, c1_cnt, c2_cnt, c3_cnt' 
+    order:          "nodeid DESC"

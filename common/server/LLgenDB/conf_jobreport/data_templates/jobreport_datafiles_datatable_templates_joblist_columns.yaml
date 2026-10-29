@@ -1,0 +1,823 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+- {
+    field: "jobid",
+    headerName: "JobID",
+    headerTooltip: "Slurm JobID",
+    cellDataType: "number",
+    valueGetter: "(params) => params.data ? parseInt(params.data.jobid, 10) : null",
+    pinned: "left",
+    sort: "desc",
+    minWidth: 75,
+    maxWidth: 90,
+  }
+
+# Job general info
+- {
+    headerName: "General Info",
+    groupId: "Info",
+    children: [
+      {
+        field: "owner",
+        headerName: "Owner", 
+        headerTooltip: "User owner of the job",
+        cellDataType: "text",
+        cellRenderer: "(params) => gen_project_user_link(params,'/data/ll/user','account')",
+        cellClass: "text-left",
+      },
+      {
+        field: "account",
+        headerName: "Project",
+        headerTooltip: "Budget used for job submission" ,
+        cellDataType: "text", 
+        cellRenderer: "(params) => gen_project_link(params,'/data/ll/project')",
+      },
+      {
+        field: "queue",
+        headerName: "Queue",
+        cellDataType: "text",
+        headerTooltip: "Slurm partition",
+      },
+      {
+        field: "nodeh",
+        headerName: "Node-h",
+        cellDataType: "number",
+        headerTooltip: "Total compute resources consumed in node-hours",
+      },
+      { 
+        field: "ld_ndps", 
+        cellDataType: "number", 
+        headerName: "#Samples", 
+        headerTooltip: "Number of (1-minute) data samples stored in database for this job",
+        columnGroupShow: "open",
+      },
+    ]
+  }
+
+- { 
+    field: "mentor",
+    cellDataType: "text", 
+    headerName: "Mentor", 
+    cellRenderer: "(params) => gen_mentor_link(params,'/data/ll/mentor')",
+    headerTooltip: "Mentor of the project" ,
+    cellClass: "text-left",
+  }
+
+# Job Slurm scheduling info
+- {
+    headerName: "Scheduler",
+    groupId: "Scheduler",
+    children: [
+      { 
+        field: "starttime",
+        cellDataType: "dateString",
+        headerName: "Start Date",
+        # minWidth: 125,
+        # flex: 2,
+        headerTooltip: "Start date of the job",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+      },
+      { 
+        field: "ts",
+        cellDataType: "dateString",
+        headerName: "Last Update",
+        # minWidth: 125,
+        headerTooltip: "Date of last update from scheduler or end time of job",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+      },
+      { 
+        field: "endtime",
+        columnGroupShow: "open",
+        cellDataType: "dateString",
+        headerName: "End Date (est)",
+        # minWidth: 125,
+        headerTooltip: "Estimated end date of the job (Start Date + Walltime)",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+      },
+      { 
+        field: "lastts",
+        columnGroupShow: "open",
+        cellDataType: "dateString",
+        headerName: "Since Last Update",
+        headerTooltip: "Time passed since the last job update" ,
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+      },
+      { 
+        field: "wall",
+        columnGroupShow: "open",
+        headerName: "Walltime",
+        headerTooltip: "Requested walltime",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "runtime",
+        headerName: "Runtime",
+        headerTooltip: "Overall runtime",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "numnodes",
+        cellDataType: "number",
+        headerName: "#Nodes",
+        headerTooltip: "Number of nodes used by the job",
+      },
+      { 
+        field: "nsteps",
+        headerName: "#Steps",
+        cellDataType: "number",
+        headerTooltip: "Number of steps within the job",
+        columnGroupShow: "open",
+      },
+      {
+        field: "restart",
+        headerName: "Restarts",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerTooltip: "Number of times the job was restarted"
+      },
+      { 
+        field: "waittime",
+        columnGroupShow: "open",
+        headerName: "Wait Time",
+        headerTooltip: "Wait time before job start (difference between start time and submit time)",
+        # cellDataType: "text",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "resid",
+        columnGroupShow: "open",
+        cellDataType: "text",
+        headerName: "Reservation",
+        cellClass: "text-left",
+        headerTooltip: "Reservation used by the job"
+      },
+    ]
+  }
+
+# Job timings
+# - {
+#     headerName: "Timings",
+#     groupId: "Timings",
+#     children: [
+#       {
+#         field: "firstts",
+#         cellDataType: "text",
+#         headerName: "\\u{0394}t (first)",
+#         headerTooltip: "Time passed since the first job update",
+#       },
+#       {
+#         field: "lastts",
+#         cellDataType: "text",
+#         headerName: "\\u{0394}t (last)",
+#         headerTooltip: "Time passed since the last job update" 
+#       }
+#     ]
+#   }
+
+# CORE Usage                    
+- {
+    headerName: "Core Usage",
+    groupId: "Core_Usage",
+    children: [
+      {
+        field: "usage_avg",
+        cellDataType: "number",
+        headerName: "Usage",
+        valueFormatter: "(params) => round_number(params)",
+        cellStyle: "(params) => cell_background_color(params,'cpuscore')",
+        headerTooltip: "Average 1-min CPU usage (max 100%) over all job nodes and runtime"
+      },
+      {
+        field: "used_cores_avg",
+        cellDataType: "number",
+        headerName: "#Cores",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average number of cores with 1-min usage > 25% over all job nodes and runtime"
+      },
+      # {
+      #   field: "used_cores_phys_avg",
+      #   cellDataType: "number",
+      #   headerName: "#PhysCores",
+      #   columnGroupShow: "open",
+      #   valueFormatter: "(params) => round_number(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average number of physical cores with 1-min usage > 25% over all job nodes and runtime"
+      # },
+      # {
+      #   field: "used_cores_logic_avg",
+      #   cellDataType: "number",
+      #   headerName: "#LogicCores",
+      #   columnGroupShow: "open",
+      #   valueFormatter: "(params) => round_number(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average number of logical cores with 1-min usage > 25% over all job nodes and runtime"
+      # },
+    ]
+  }
+
+# Load/Memory
+- { 
+    headerName: "Load/Memory",
+    groupId: "Load/Memory",
+    children: [
+      {
+        field: "load_avg", 
+        headerName: "Load", 
+        cellDataType: "number",  
+        valueFormatter: "(params) => round_number(params)",
+        cellStyle: "(params) => cell_background_color(params,'ldscore')",
+        headerTooltip: "CPU load average over all job nodes and runtime"
+      },
+      {
+        field: "used_mem_max",
+        cellDataType: "number",
+        headerName: "MaxMem",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum used memory by the job over all job nodes and runtime (GiB)"
+      }
+    ]
+  }
+
+# GPU
+- {
+    headerName: "GPU",
+    groupId: "GPU",
+    children: [
+      {
+        field: "gpu_active_avg",
+        cellDataType: "number",
+        headerName: "GPUActiveSM",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellStyle: "(params) => cell_background_color(params,'gpu_usage_score')",
+        headerTooltip: "Average percentage of time at least one warp was active on a GPU multiprocessor over all GPU multiprocessors and runtime"
+      },
+      {
+        field: "gpu_active_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxActiveSM",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        headerTooltip: "Maximum percentage of time at least one warp was active on a GPU multiprocessor over all GPU multiprocessors and runtime"
+      },
+      # {
+      #   field: "gpu_util_avg",
+      #   cellDataType: "number",
+      #   columnGroupShow: "open",
+      #   headerName: "GPUUsage",
+      #   valueFormatter: "(params) => round_number_or_null(params)",
+      #   headerTooltip: "Average GPU utilization (percent of time one or more kernels was executing) over all GPU and runtime"
+      # },
+      # {
+      #   field: "gpu_util_max",
+      #   cellDataType: "number",
+      #   columnGroupShow: "open",
+      #   headerName: "GPUMaxUsage",
+      #   valueFormatter: "(params) => round_number_or_null(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Maximum GPU utilization (percent of time one or more kernels was executing) over all GPU and runtime"
+      # },
+      {
+        field: "gpu_memu_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMem",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average used GPU memory by the job over all job GPUs and runtime (GiB)"
+      },
+      {
+        field: "gpu_memu_max",
+        cellDataType: "number",
+        headerName: "GPUMaxMem",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum used GPU memory by the job over all job GPUs and runtime (GiB)"
+      },
+      {
+        field: "gpu_memur_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMemRate",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average GPU memory usage rate (percentage of time global device memory was beeing read/written) over all job GPUs and runtime"
+      },
+      {
+        field: "gpu_tensor_avg",
+        cellDataType: "number",
+        headerName: "GPUTensor",
+        columnGroupShow: "open",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        headerTooltip: "Average percentage of time the Tensor Core pipes were active on a GPU multiprocessor over all GPU multiprocessors and runtime."
+      },
+      {
+        field: "gpu_tensor_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxTensor",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        headerTooltip: "Maximum percentage of time the Tensor Core pipes were active on a GPU multiprocessor over all GPU multiprocessors and runtime."
+      },
+      # {
+      #   field: "gpu_pu_avg",
+      #   cellDataType: "number",
+      #   headerName: "GPUPower",
+      #   columnGroupShow: "open",
+      #   valueFormatter: "(params) => round_number_or_null(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average GPU power usage over all job GPUs and runtime (W)"
+      # },
+      # {
+      #   field: "gpu_pu_max",
+      #   cellDataType: "number",
+      #   columnGroupShow: "open",
+      #   headerName: "GPUMaxPower",
+      #   valueFormatter: "(params) => round_number_or_null(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Maximum GPU power usage over all job GPUs and runtime (W)"
+      # },
+      {
+        field: "gpu_temp_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUTemp",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average GPU temperature over all job GPUs and runtime (&deg;C)"
+      },
+      {
+        field: "gpu_temp_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxTemp",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum GPU temperature over all job GPUs and runtime (&deg;C)"
+      },
+      {
+        field: "gpu_sclk_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUFreq",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average GPU streaming clock frequency over all job GPUs and runtime (MHz)"
+      },
+      {
+        field: "gpu_sclk_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxFreq",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum GPU streaming clock frequency over all job GPUs and runtime (MHz)"
+      },
+      {
+        field: "gpu_clkr_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUClkr",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average GPU clock throttle reason (1:GpuIdle, 2:AppClkSet, 4:SwPwrCap, 8:HWSlowDown, 16:SyncBoost, 32:SwThermSlDwn, 64:HwThermSlDwn, 128:PwrBrakeSlDw)"
+      },
+      {
+        field: "gpu_clkr_max",
+        cellDataType: "number",
+        headerName: "GPUMaxClkr",
+        cellClass: "text-right",
+        headerTooltip: "Maximum GPU clock throttle reason (1:GpuIdle, 2:AppClkSet, 4:SwPwrCap, 8:HWSlowDown, 16:SyncBoost, 32:SwThermSlDwn, 64:HwThermSlDwn, 128:PwrBrakeSlDw)"
+      },
+      {
+        field: "gpu_pcie_tx_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUPCIeTX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average transmission rate over PCIe"
+      },
+      {
+        field: "gpu_pcie_tx_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxPCIeTX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum transmission rate over PCIe"
+      },
+      {
+        field: "gpu_pcie_rx_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUPCIeRX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average reception rate over PCIe"
+      },
+      {
+        field: "gpu_pcie_rx_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxPCIeRX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum reception rate over PCIe"
+      },
+      {
+        field: "gpu_nvlink_tx_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUNVLTX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average transmission rate over NVlink"
+      },
+      {
+        field: "gpu_nvlink_tx_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxNVLTX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum transmission rate over NVlink"
+      },
+      {
+        field: "gpu_nvlink_rx_avg",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUNVLRX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average reception rate over NVlink"
+      },
+      {
+        field: "gpu_nvlink_rx_max",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "GPUMaxNVLRX",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Maximum reception rate over NVlink"
+      },
+      {
+        field: "gpu_numgpus",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "#GPUs",
+        headerTooltip: "Number of GPUs used by the job"
+      },
+    ]
+  }
+
+# Power/Energy
+- { 
+  headerName: "Power/Energy",
+  groupId: "PowerEnergy",
+  children: [
+      {
+        field: "pwr_nd_avg",
+        cellDataType: "number",
+        headerName: "NodePwr",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average node power over all job nodes and runtime (W)"
+      },
+      # {
+      #   field: "pwr_ch_avg",
+      #   cellDataType: "number",
+      #   headerName: "SuperchipPwr",
+      #   valueFormatter: "(params) => round_number(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average Grace-Hopper power over all superchips and runtime (W)"
+      # },
+      # {
+      #   field: "cpupwr_ch_avg",
+      #   cellDataType: "number",
+      #   headerName: "CPUPwr",
+      #   valueFormatter: "(params) => round_number(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average Grace CPU power over all job superchips and runtime (W)",
+      # },
+      # {
+      #   field: "cpupwrcap_ch_avg",
+      #   cellDataType: "number",
+      #   headerName: "CPUPwrCap",
+      #   valueFormatter: "(params) => round_number(params)",
+      #   cellClass: "text-right",
+      #   headerTooltip: "Average Grace CPU power cap over all job superchips and runtime (W)",
+      #   columnGroupShow: "open"
+      # },
+      {
+        field: "gpu_pu_avg",
+        cellDataType: "number",
+        headerName: "GPUPower",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Average GPU power usage over all job GPUs and runtime (W)",
+      },
+      {
+        field: "en_nd_all_sum",
+        cellDataType: "number",
+        headerName: "Energy (est)",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Estimated energy used by this job up to now, integrated from the node power snapshots (Wh)"
+      },
+    ]
+  }
+
+# Network
+- { 
+  headerName: "Network",
+  groupId: "Network",
+  children: [
+      {
+        field: "mbinout_avg",
+        cellDataType: "number",
+        headerName: "IC Data",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Data transferred (in+out) over interconnect, average among all job nodes and over time (MiB/s)"
+      },
+      {
+        field: "pckinout_avg",
+        cellDataType: "number",
+        headerName: "IC Pck",
+        valueFormatter: "(params) => round_number(params)",
+        cellClass: "text-right",
+        headerTooltip: "Number of packets transferred (in+out) over interconnect, average among all job nodes and over time (M-pck/s)"
+      },
+    ]
+  }
+
+# File system (All)
+- { 
+      headerName: "I/O",
+      groupId: "I/O",
+      children: [
+      {
+        field: "fs_all_Mbw_sum",
+        cellDataType: "number",
+        columnGroupShow: "closed",
+        headerName: "Write",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_all_w_score')",
+        headerTooltip: "Total data volume written for all file systems during job run time (GiB)"
+      },
+      {
+        field: "fs_all_Mbr_sum",
+        cellDataType: "number",
+        columnGroupShow: "closed",
+        headerName: "Read",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_all_r_score')",
+        headerTooltip: "Total data volume read for all file systems during job run time (GiB)"
+      },
+      {
+        field: "fs_all_Moc_sum",
+        cellDataType: "number",
+        columnGroupShow: "closed",
+        headerName: "O/C",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Total number of file open/close operations on all file systems during job run time (M)"
+      },
+      {
+        field: "fs_home_Mbw_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "HOME Wr",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_home_w_score')",
+        headerTooltip: "Total data volume written for HOME during job run time (GiB)"
+      },
+      {
+        field: "fs_home_Mbr_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "HOME Rd",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_home_r_score')",
+        headerTooltip: "Total data volume read for HOME during job run time (GiB)"
+      },
+      {
+        field: "fs_home_Moc_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "HOME OC",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Total number of file open/close operations on HOME during job run time (M)"
+      },
+      {
+        field: "fs_project_Mbw_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "PRJ Wr",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_project_w_score')",
+        headerTooltip: "Total data volume written for PROJECT during job run time (GiB)"
+      },
+      {
+        field: "fs_project_Mbr_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "PRJ Rd",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_project_r_score')",
+        headerTooltip: "Total data volume read for PROJECT during job run time (GiB)"
+      },
+      {
+        field: "fs_project_Moc_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "PRJ OC",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Total number of file open/close operations on PROJECT during job run time (M)"
+      },
+      {
+        field: "fs_scratch_Mbw_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "SCR Wr",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_scratch_w_score')",
+        headerTooltip: "Total data volume written for SCRATCH during job run time (GiB)"
+      },
+      {
+        field: "fs_scratch_Mbr_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "SCR Rd",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_scratch_r_score')",
+        headerTooltip: "Total data volume read for SCRATCH during job run time (GiB)"
+      },
+      {
+        field: "fs_scratch_Moc_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "SCR OC",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Total number of file open/close operations on SCRATCH during job run time (GiB)"
+      },
+      {
+        field: "fs_fastdata_Mbw_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "DATA Wr",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_fastdata_w_score')",
+        headerTooltip: "Total data volume written for DATA during job run time (GiB)"
+      },
+      {
+        field: "fs_fastdata_Mbr_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "DATA Rd",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        cellStyle: "(params) => cell_background_color(params,'fs_fastdata_r_score')",
+        headerTooltip: "Total data volume read for DATA during job run time (GiB)"
+      },
+      {
+        field: "fs_fastdata_Moc_sum",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerName: "DATA OC",
+        valueFormatter: "(params) => round_number_or_null(params)",
+        cellClass: "text-right",
+        headerTooltip: "Total number of file open/close operations on DATA during job run time (M)"
+      },
+    ]
+  }
+
+  
+# RC/State
+- { 
+  headerName: "Status",
+  groupId: "Status",
+  children: [
+      {
+        field: "rc_state",
+        cellDataType: "text",
+        cellStyle: "(params) => cell_color(params,'rc_state_color')",
+        headerName: "State",
+        headerTooltip: "State of the Job",
+        # minWidth: 95,
+      },
+      {
+        field: "nummsgs",
+        cellDataType: "number",
+        headerName: "#Err",
+        valueFormatter: "(params) => round_number_or_null_int(params)", 
+        cellClass: "text-right", 
+        cellStyle: "{color: 'red', 'font-weight': 'bold'}", 
+        headerTooltip: "Number of error messages from node logs",
+      },
+      {
+        field: "numerrnodes",
+        cellDataType: "number",
+        headerName: "#ErrNds",
+        valueFormatter: "(params) => round_number_or_null_int(params)", 
+        cellClass: "text-right", 
+        cellStyle: "{color: 'red', 'font-weight': 'bold'}", 
+        headerTooltip: "Number of nodes with error messages from node logs",
+      },
+    ]
+  }
+
+# Scores
+- {
+    field: "total_score",
+    cellDataType: "number",
+    headerName: "Total Score",
+    valueFormatter: "(params) => round_number(params)",
+    cellStyle: "(params) => cell_background_color(params,'total_score')",
+    headerTooltip: "Total score taking into account the CPU and eventual GPU usages"
+  }
+
+# Files
+- { 
+    headerName: "Reports",
+    groupId: "Reports",
+    children: [
+      {
+        field: "htmlfile_reg",
+        headerName: "",
+        filter: "", 
+        cellRenderer: "(params) => create_report_link(params,'html','account','owner')",
+        tooltipValueGetter: "(params) => (params.value && params.value !== '-') ? 'Show job report' : 'Job report not available'",
+        headerTooltip: "Detailed HTML reports",
+        floatingFilter: false,
+        resizable: false,
+        suppressSizeToFit: false,
+        suppressAutoSize: false,
+        # minWidth: 35,
+        maxWidth: 35,
+        pinned: "right",
+      },
+      {
+        field: "pdffile_reg",
+        headerName: "",
+        filter: "", 
+        cellRenderer: "(params) => create_report_link(params,'pdf','account','owner')",
+        tooltipValueGetter: "(params) => (params.value && params.value !== '-') ? 'Download job report' : 'Job report not available'",
+        headerTooltip: "Detailed PDF reports", 
+        floatingFilter: false,
+        # minWidth: 35,
+        maxWidth: 35,
+        suppressSizeToFit: false,
+        suppressAutoSize: false,
+        resizable: false,
+        pinned: "right",
+      },
+      {
+        field: "pdffile_reg",
+        headerName: "",
+        filter: "", 
+        cellRenderer: "(params) => create_report_link(params,'aireport','account','owner')",
+        tooltipValueGetter: "(params) => (params.value && params.value !== '-') ? (view.uiConfig?.llviewai?.enableAIReports ? 'Generate AI report' : 'AI reports are not enabled') : 'Job report not available'",
+        headerTooltip: "Detailed AI reports", 
+        floatingFilter: false,
+        # minWidth: 35,
+        maxWidth: 35,
+        suppressSizeToFit: false,
+        suppressAutoSize: false,
+        resizable: false,
+        pinned: "right",
+      },
+    ]
+  }

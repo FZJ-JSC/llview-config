@@ -1,0 +1,85 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+# This block must always be present, as it defines the system time
+sysinfo:
+  LML: './sysinfo_LML.xml'
+  motd: '/etc/motd'
+  type: 'system'
+  prefix: 'sys'
+  apply_function: sysinfo
+
+accountinfo:
+  # cmd: "flux jobs -a -A -c 0 -o '{username}|{bank}'"
+  cmd: "flux account list-users -o '{username}|{bank}|{userid}'"
+  LML: './fluxaccounts_LML.xml'
+  type: 'usermap_flux'
+  prefix: 'SU'
+  apply_function: accountinfo
+  support:
+    type: 'supportmap_flux'
+    prefix: 'SS'
+    users:
+      - u1003
+      - u1004
+      - u1012
+      - u1013
+      - avivenot_local
+  mapping:
+    id: 'id'
+    ts: 'ts'
+    bank: 'projects'
+    username: 'wsaccount'
+    userid: 'userid'
+
+jobinfo:
+  cmd: "flux jobs -a -A -c 0 -o '{id.dec}|{username}|{bank}|{queue}|{name}|{t_submit!D}|{sched.t_estimate!D}|{t_run!D}|{t_cleanup!D}|{duration}|{runtime}|{status}|{result}|{nnodes}|{ncores}|{ntasks}|{priority}|{urgency}|{dependencies}|{returncode}|{waitstatus}|{sched.reason_pending}|{exception.type}|{exception.note}|{cwd}|{nodelist}'"
+  LML: './jobs_LML.xml'
+  type: 'job'
+  # exclude:
+  #   Partition: 'dc-gpu'
+  # include:
+  #   Partition: 'dc-gpu'
+  prefix: 'j'
+  apply_function: jobinfo
+  modify_after_parse:
+    NODELIST: expand_NodeList
+    T_SUBMIT: modify_date
+    T_RUN: modify_date
+    T_CLEANUP: modify_date
+  # modify_before_mapping:
+  #   JobState: modify_state
+  mapping:
+    JOBID:            'jobid'
+    USER:             'owner'
+    BANK:             'account'
+    QUEUE:            'queue'
+    NAME:             'name'
+    T_SUBMIT:         'queuedate'
+    T_ESTIMATE:       'estimate_time'
+    T_RUN:            'starttime'
+    T_CLEANUP:        'endtime'
+    DURATION:         'wall'
+    RUNTIME:          'runtime'
+    STATUS:           'status'
+    RESULT:           'detailedstatus'
+    NNODES:           'numnodes'
+    NCORES:           'totalcores'
+    NTASKS:           'totaltasks'
+    DEPENDENCIES:     'dependencies'
+    PRI:              'userprio'
+    URGENCY:          'urgency'
+    RC:               'return_code' # high-level return code, equivalent to Slurm's rc
+    WSTATUS:          'waitstatus'  # raw wait status; extract signal in post-processing; signal = waitstatus & 0x7f ; exitcode = (waitstatus >> 8) & 0xff
+    REASON:           'reason'
+    EXCEPTION-TYPE:   'exception_type' # When job ended via a Flux exception (e.g.: cancel, timeout, alloc, exec)
+    EXCEPTION-NOTE:   'exception_note' # Free-text detail about the exception (e.g.: "per user request", "job.timelimit", "nodes unavailable")
+    CWD:              'working_directory'
+    NODELIST:         'nodelist'

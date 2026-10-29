@@ -1,0 +1,52 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+
+- dataset:
+    name: template_memheatmap
+    set: template
+    filepath: '$outputdir/LLtemplates/memheatmap.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      # The primary memory class identifier is pinned to the left so it remains visible while scrolling horizontally
+      - {
+          field: "memcls",
+          headerName: "Memory Class",
+          headerTooltip: "Memory usage up to xx GB",
+          cellDataType: "text",
+          pinned: "left",
+          sortable: false,
+          minWidth: 110,
+        }
+      # The heatmap columns are generated uniformly without grouping. 
+      # Percentage formatters and specific color scales are applied directly to each cell.
+      - { field: "n_1",    sortable: false, headerName: "N_1", headerTooltip: "Percentage used by jobs of size 1", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_1', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_2",    sortable: false, headerName: "N_2", headerTooltip: "Percentage used by jobs of size 2", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_2', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_3",    sortable: false, headerName: "N_3", headerTooltip: "Percentage used by jobs of size 3", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_3', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_4",    sortable: false, headerName: "N_4", headerTooltip: "Percentage used by jobs of size 4", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_4', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_5",    sortable: false, headerName: "N_5", headerTooltip: "Percentage used by jobs of size 5", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_5', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_6",    sortable: false, headerName: "N_6", headerTooltip: "Percentage used by jobs of size 6", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_6', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_7",    sortable: false, headerName: "N_7", headerTooltip: "Percentage used by jobs of size 7", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_7', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_8",    sortable: false, headerName: "N_8", headerTooltip: "Percentage used by jobs of size 8", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_8', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_9",    sortable: false, headerName: "N_9", headerTooltip: "Percentage used by jobs of size 9", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_9', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_10",   sortable: false, headerName: "N_10", headerTooltip: "Percentage used by jobs of size 10", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_10', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_12",   sortable: false, headerName: "N_12", headerTooltip: "Percentage used by jobs of size 12", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_12', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_16",   sortable: false, headerName: "N_16", headerTooltip: "Percentage used by jobs of size 16", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_16', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_24",   sortable: false, headerName: "N_24", headerTooltip: "Percentage used by jobs of size 24", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_24', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_32",   sortable: false, headerName: "N_32", headerTooltip: "Percentage used by jobs of size 32", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_32', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_48",   sortable: false, headerName: "N_48", headerTooltip: "Percentage used by jobs of size 48", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_48', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_64",   sortable: false, headerName: "N_64", headerTooltip: "Percentage used by jobs of size 64", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_64', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_96",   sortable: false, headerName: "N_96", headerTooltip: "Percentage used by jobs of size 96", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_96', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_128",  sortable: false, headerName: "N_128", headerTooltip: "Percentage used by jobs of size 128", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_128', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_192",  sortable: false, headerName: "N_192", headerTooltip: "Percentage used by jobs of size 192", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_192', 'RdYlGn')", minWidth: 70 }
+      - { field: "n_all",  sortable: false, headerName: "N_ALL", headerTooltip: "Percentage used by jobs of any size", cellDataType: "number", valueFormatter: "(params) => percent_or_null(params)", cellStyle: "(params) => cell_background_color(params, 'n_all', 'RdYlGn')", minWidth: 70 }
+

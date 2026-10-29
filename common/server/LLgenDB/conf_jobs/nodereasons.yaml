@@ -1,0 +1,64 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+nodereasons:
+  tables:
+    - table:
+        name: nodereasons
+        options:
+          update:
+            LML: reasons
+            mode: replace
+          update_trigger:
+            # Trigger the historical tracking table
+            - all_nodereasons
+        columns: 
+          - { name: nodeid,          type: name_t,            LML_from: nodeid,          LML_default: 'unknown' }
+          - { name: currentstate,    type: name_t,            LML_from: currentstate,    LML_default: 'unknown' }
+          - { name: reason,          type: extralongstr_t,    LML_from: reason,          LML_default: '-'       }
+          - { name: date,            type: longstr_t,         LML_from: date,            LML_default: '-'       }
+
+    - table:
+        name: all_nodereasons
+        options:
+          update:
+            sql_update_contents:
+              # -- 1. Remove the currently ACTIVE tracking rows for nodes that are still down
+              # -- This allows us to update the reason/state if an admin modifies it while the node is down
+              # -- 2. Insert the fresh data from the active table, generating the unique event_id
+              # -- resolved_date is left as '-' since the issue is ongoing
+              # -- 3. Any node remaining in the history table as 'ACTIVE' that is NOT in the current sinfo list has been fixed!
+              # -- We mark it 'RESOLVED' and stamp the current server time matching Slurm's date format (YYYY-MM-DD HH:MM:SS)
+              sql: 
+                DELETE FROM all_nodereasons 
+                WHERE nodeid IN (SELECT nodeid FROM nodereasons)
+                AND status = 'ACTIVE';                
+                INSERT INTO all_nodereasons (event_id, nodeid, currentstate, reason, down_date, resolved_date, status)
+                SELECT nodeid || '_' || date, nodeid, currentstate, reason, date, '-', 'ACTIVE'
+                FROM nodereasons;
+                UPDATE all_nodereasons 
+                SET status = 'RESOLVED',
+                    resolved_date = strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')
+                WHERE nodeid NOT IN (SELECT nodeid FROM nodereasons)
+                AND status = 'ACTIVE';          
+          # Strict firewall against duplicate entries for the same outage event
+          unique_index: event_id
+          index: 
+            - nodeid
+            - status
+            - down_date
+        columns: 
+          - { name: event_id,        type: longstr_t        }
+          - { name: nodeid,          type: name_t           }
+          - { name: currentstate,    type: name_t           }
+          - { name: reason,          type: extralongstr_t   }
+          - { name: down_date,       type: longstr_t        }
+          - { name: resolved_date,   type: longstr_t        }
+          - { name: status,          type: name_t           }

@@ -1,0 +1,360 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+
+#---------------------------
+# table, filled by LML input
+#---------------------------
+- table:
+    name: nodepower_import
+    options:
+      update:
+        LML: ndpwrinfo
+        LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+        mode: replace
+      update_trigger:
+        - nodepower
+        - nodeenergy
+        - nodelastpower
+        - nodepower_aggr_by_ts
+        - nodepower_aggr_by_node
+        - node_update_status
+        - nodepower_current_jobid
+        - nodepower_jobmap_by_nd_minmaxts
+        - nodepower_by_jobid_nodeid_ts
+        - nodepower_aggr_by_jobid_ts
+        - nodepower_aggr_by_jobid
+      archive:
+        limit: max(ts)-25h
+      unique_index: nodeid, ts
+    columns: 
+      - { name: nodeid,           type: nodeid_t,   LML_from: id,               LML_default: 'unknown' }
+      - { name: ts,               type: ts_t,       LML_from: ndpwr_ts,         LML_default: -1,  LML_minlastinsert: mintsinserted }
+      - { name: power,            type: float_t,    LML_from: ndpwr,            LML_default: 0 }
+      - { name: temp,             type: float_t,    LML_from: max_temp,         LML_default: 0 }
+
+#---------------------------
+# table, all nodes at a ts
+#---------------------------
+- table:
+    name: nodepower
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodepower WHERE (ts >= mintsinserted);
+               INSERT INTO nodepower (nodeid,ts,power,temp)
+                       SELECT ni.nodeid, dt.ts, 0.0, 21.0
+                       FROM nodeinfo ni, (SELECT DISTINCT ts FROM nodepower_import) dt
+                       WHERE ni.nodeid NOT IN (SELECT nodeid FROM nodepower_import);
+               INSERT INTO nodepower (nodeid,ts,power,temp)
+                       SELECT nodeid,ts,power,temp
+                       FROM nodepower_import
+                       WHERE power!="None" AND temp!="None";
+      archive:
+        limit: max(ts)-25h
+      unique_index: nodeid,ts
+    columns: 
+      - { name: nodeid,           type: nodeid_t  }
+      - { name: ts,               type: ts_t      }
+      - { name: power,            type: float_t   }
+      - { name: temp,             type: float_t   }
+
+
+#-----------------------------
+# table, joule info (1J = 1 Ws, 1 kWh = 3,6 MJ) 
+#-----------------------------
+#------------------------------------------------------------
+# table contains energy info 
+#------------------------------------------------------------
+# (avg of last two measure points)
+#  (curr.power+last.power) / 2,
+#  (curr.temp+last.temp) / 2,
+#  (curr.ts-last.ts) * (curr.power+last.power) / 2 / 1000000.0
+#
+# (or last measure point)
+#  curr.power,
+#  curr.temp,
+#  (curr.ts-last.ts) * curr.power / 1000000.0
+#
+- table:
+    name: nodeenergy
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodeenergy WHERE (ts >= mintsinserted);
+               INSERT INTO nodeenergy (nodeid,ts,power,temp,Mjoule)
+                      SELECT curr.nodeid, curr.ts,
+                             curr.power,
+                             curr.temp,
+                             (curr.ts-last.ts) * curr.power / 1000000.0
+                      FROM nodepower curr, nodelastpower last 
+                      WHERE (curr.ts >= mintsinserted)
+                            AND (curr.nodeid=last.nodeid);
+      archive:
+        limit: max(ts)-25h
+      unique_index: nodeid, ts
+    columns: 
+      - { name: nodeid,           type: nodeid_t  }
+      - { name: ts,               type: ts_t      }
+      - { name: power,            type: float_t   }
+      - { name: temp,             type: float_t   }
+      - { name: Mjoule,           type: float_t   }
+
+
+#--------------------------
+# table contains last element
+#----------------------------
+- table:
+    name: nodelastpower
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodelastpower;
+               INSERT INTO nodelastpower (nodeid,ts,power)
+                      SELECT nodeid,ts,power
+                      FROM nodepower
+                      WHERE (ts >= mintsinserted);
+      archive:
+        limit: max(ts)-25h
+      unique_index: nodeid
+    columns: 
+      - { name: nodeid,           type: nodeid_t  }
+      - { name: ts,               type: ts_t      }
+      - { name: power,            type: float_t   }
+
+
+
+#-------------------------------
+# tables, containing per ts info
+#-------------------------------
+- table:
+    name: nodepower_aggr_by_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodepower_aggr_by_ts WHERE (ts >= mintsinserted);
+               DELETE FROM nodepower_aggr_by_ts WHERE (ts < mintsinserted - 25*3600);
+               INSERT INTO nodepower_aggr_by_ts
+                                 (ts, cnt,
+                                  power_avg, power_min, power_max,
+                                  temp_avg, temp_min, temp_max)
+                                              SELECT ts, COUNT(ts),
+                                                     AVG(power),    MIN(power),    MAX(power),
+                                                     AVG(temp),     MIN(temp),     MAX(temp)
+                                              FROM nodepower WHERE (ts >= mintsinserted)
+                                              GROUP by ts
+      archive:
+        limit: max(ts)-25h
+      unique_index: ts
+    columns: 
+      - { name: ts,                   type: ts_t }
+      - { name: cnt,                  type: int_t }
+      - { name: power_avg,            type: float_t }
+      - { name: power_min,            type: float_t }
+      - { name: power_max,            type: float_t }
+      - { name: temp_avg,             type: float_t }
+      - { name: temp_min,             type: float_t }
+      - { name: temp_max,             type: float_t }
+
+
+#-----------------------------------
+# tables, containing per nodeid info
+#-----------------------------------
+- table:
+    name: nodepower_aggr_by_node
+    options:
+      update:
+        # updates only a subset of nodes in one step (full turn in 15 steps)
+        sql_update_contents:
+          sqldebug: 0
+          sql: DELETE FROM nodepower_aggr_by_node
+                      WHERE nodeid IN (
+                                   SELECT nodeid FROM nodeinfo, node_update_status
+                                   WHERE nid%update_step_max=update_step and step_id=1
+                                   );
+               INSERT INTO nodepower_aggr_by_node
+                                   (nodeid, cnt,
+                                    power_avg, power_min, power_max,
+                                    temp_avg, temp_min, temp_max,
+                                    ts_min, ts_max)
+                                               SELECT nodeid, COUNT(ts),
+                                                       AVG(power),    MIN(power),    MAX(power),
+                                                       AVG(temp),     MIN(temp),     MAX(temp),
+                                                       MIN(ts),   MAX(ts)
+                                               FROM nodepower 
+                                               WHERE nodeid IN (
+                                                     SELECT nodeid FROM nodeinfo, node_update_status
+                                                     WHERE nid%update_step_max=update_step and step_id=1
+                                                     )
+                                               GROUP by nodeid
+      archive:
+        limit: max(ts_max)-25h
+      unique_index: nodeid
+    columns: 
+      - { name: nodeid,               type: nodeid_t }
+      - { name: cnt,                  type: int_t }
+      - { name: power_avg,            type: float_t }
+      - { name: power_min,            type: float_t }
+      - { name: power_max,            type: float_t }
+      - { name: temp_avg,             type: float_t }
+      - { name: temp_min,             type: float_t }
+      - { name: temp_max,             type: float_t }
+      - { name: ts_min,               type: ts_t }
+      - { name: ts_max,               type: ts_t }
+
+#----------------------------------
+# tables, containing per jobid info
+#----------------------------------
+- table:
+    name: nodepower_by_jobid_nodeid_ts
+    options:
+      update:
+        sql_update_contents:
+          sqldebug: 0
+          vars: mintsinserted
+          sql: DELETE FROM nodepower_by_jobid_nodeid_ts WHERE (ts >= mintsinserted);
+               INSERT INTO nodepower_by_jobid_nodeid_ts
+                          (jobid,ts,nodeid,power,temp,Mjoule)
+                          SELECT jnt.jobid, eng.ts, eng.nodeid,
+                                 eng.power, eng.temp, eng.Mjoule
+                           FROM nodepower_jobmap_by_nd_minmaxts jnt,
+                                nodeenergy eng
+                           WHERE  (eng.ts >= mintsinserted) 
+                              AND (jnt.nodeid=eng.nodeid) AND (eng.ts <= jnt.maxts+59)
+      archive:
+        limit: max(ts)-25h
+        non_existent: jobnodemap/jobid
+      unique_index: jobid, nodeid, ts
+    columns: 
+      - { name: jobid,            type: jobid_t   }
+      - { name: ts,               type: ts_t      }
+      - { name: nodeid,           type: nodeid_t  }
+      - { name: power,            type: float_t   }
+      - { name: temp,             type: float_t   }
+      - { name: Mjoule,           type: float_t   }
+
+- table:
+    name: nodepower_aggr_by_jobid_ts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodepower_aggr_by_jobid_ts WHERE (ts >= mintsinserted);
+               INSERT INTO nodepower_aggr_by_jobid_ts
+                 (jobid,ts,cnt,
+                  power_avg,power_min,power_max,
+                  temp_avg,temp_min,temp_max, Mjoule_sum)
+                    SELECT jobid,
+                           ts,
+                           COUNT(power),
+                           AVG(power),  MIN(power),  MAX(power),
+                           AVG(temp),   MIN(temp),   MAX(temp),
+                           SUM(Mjoule)
+                           FROM nodepower_by_jobid_nodeid_ts
+                           WHERE (ts >= mintsinserted)
+                           GROUP by jobid,ts;
+      archive:
+        limit: max(ts)-25h
+        non_existent: jobnodemap/jobid
+      unique_index: jobid, ts
+    columns: 
+      - { name: jobid,       type: jobid_t }
+      - { name: ts,          type: ts_t    }
+      - { name: cnt,         type: int_t }
+      - { name: power_avg,   type: float_t }
+      - { name: power_min,   type: float_t }
+      - { name: power_max,   type: float_t }
+      - { name: temp_avg,    type: float_t }
+      - { name: temp_min,    type: float_t }
+      - { name: temp_max,    type: float_t }
+      - { name: Mjoule_sum,  type: float_t }
+
+
+- table:
+    name: nodepower_aggr_by_jobid
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sqldebug: 0
+          sql: DELETE FROM nodepower_aggr_by_jobid WHERE jobid IN (SELECT jobid from nodepower_current_jobid);
+               INSERT INTO nodepower_aggr_by_jobid
+                           (jobid, pwr_ts, cnt,
+                           power_avg,power_min,power_max,
+                           temp_avg,temp_min,temp_max,
+                           Mjoule_sum)
+                    SELECT jobid, MAX(ts), COUNT(ts),
+                           AVG(power_avg),  MIN(power_min),  MAX(power_max),
+                           AVG(temp_avg), MIN(temp_min), MAX(temp_max),
+                           SUM(Mjoule_sum)
+                           FROM nodepower_aggr_by_jobid_ts
+                           WHERE jobid IN (SELECT jobid from nodepower_current_jobid)
+                           GROUP by jobid;
+      archive:
+        limit: max(pwr_ts)-25h
+        non_existent: jobnodemap/jobid
+      unique_index: jobid
+    columns: 
+      - { name: jobid,       type: jobid_t }
+      - { name: pwr_ts,      type: ts_t    }
+      - { name: cnt,         type: int_t   }
+      - { name: power_avg,   type: float_t }
+      - { name: power_min,   type: float_t }
+      - { name: power_max,   type: float_t }
+      - { name: temp_avg,    type: float_t }
+      - { name: temp_min,    type: float_t }
+      - { name: temp_max,    type: float_t }
+      - { name: Mjoule_sum,  type: float_t }
+
+      
+#----------------------------
+# temp. tables to speed joins 
+#----------------------------
+- table:
+    name: nodepower_jobmap_by_nd_minmaxts
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodepower_jobmap_by_nd_minmaxts;
+               INSERT INTO nodepower_jobmap_by_nd_minmaxts
+                   SELECT jt.jobid,
+                          jn.nodeid,
+                          min(jt.ts),
+                          max(jt.ts)
+                          FROM jobnodemap jn, jobtsmap jt
+                          WHERE (jt.jobid=jn.jobid)
+                          GROUP BY jt.jobid,jn.nodeid;
+    columns: 
+      - { name: jobid,    type: jobid_t }
+      - { name: nodeid,   type: nodeid_t }
+      - { name: mints,    type: ts_t    }
+      - { name: maxts,    type: ts_t    }
+
+# subtracted 59 sec to catch same one minute interval      
+- table:
+    name: nodepower_current_jobid
+    options:
+      update:
+        sql_update_contents:
+          vars: mintsinserted
+          sql: DELETE FROM nodepower_current_jobid;
+               INSERT INTO nodepower_current_jobid
+                    SELECT jt.jobid
+                           FROM jobtsmap jt
+                           WHERE (jt.ts >= mintsinserted - 59);
+      update_trigger:
+    columns: 
+      - { name: jobid,    type: jobid_t }

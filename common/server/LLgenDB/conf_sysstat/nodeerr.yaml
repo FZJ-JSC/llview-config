@@ -1,0 +1,119 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Nabil Abubaker (Forschungszentrum Juelich GmbH) 
+
+nodeerr:
+  tables:
+    - table:
+        name: nodeerr
+        options:
+          update:
+            LML: nodeerr
+            # Use 'mode: add' since we manually handle deduplication and archiving
+            mode: add
+          update_trigger:
+            - nodeerr_last
+            - nodeerr_stat_by_node_by_msgcls
+            - nodeerr_stat_by_day
+          archive:
+            # Keeps the raw table clean over a 21-day rolling window
+            limit: max(nodeerrts)-21d
+          index: nodeid,msgcls
+        columns: 
+          - { name: nodeid,          type: nodeid_t,          LML_from: node,            LML_default: 'unknown' }
+          - { name: nodeerrts,       type: ts_t,              LML_from: timestamp,       LML_default: -1 }
+          - { name: jobid,           type: jobid_t,           LML_from: jobid,           LML_default: 'unknown' }
+          - { name: cmd,             type: longstr_t,         LML_from: command,         LML_default: 'unknown' }
+          - { name: pid,             type: pid_t,             LML_from: pid,             LML_default: 0 }
+          - { name: user,            type: owner_t,           LML_from: username,        LML_default: 'unknown' }
+          - { name: msgcls,          type: cnt_t,             LML_from: msgcls,          LML_default: 0 }
+          - { name: msg,             type: extralongstr_t,    LML_from: msg,             LML_default: "" }
+          - { name: uid,             type: pid_t,             LML_from: uid,             LML_default: 0 }
+          - { name: gid,             type: pid_t,             LML_from: gid,             LML_default: 0 }
+
+    - table:
+        name: nodeerr_last
+        options:
+          update:
+            sql_update_contents:
+               sql: DELETE FROM nodeerr WHERE rowid NOT IN (SELECT MIN(rowid) FROM nodeerr GROUP BY nodeid,nodeerrts,pid);
+                    INSERT INTO nodeerr_last (nodeid,nodeerrts,jobid,cmd,pid,user,msgcls,msg,uid,gid)
+                    SELECT nodeid,nodeerrts,jobid,cmd,pid,user,msgcls,msg,uid,gid
+                    FROM nodeerr 
+                    WHERE nodeerrts > (SELECT COALESCE(MAX(nodeerrts), 0) FROM nodeerr_last);
+                    DELETE FROM nodeerr_last_stat;
+                    INSERT INTO nodeerr_last_stat (nodeid,cnt,oldestts)
+                    SELECT nodeid,count(*),min(nodeerrts)
+                    FROM nodeerr_last GROUP BY nodeid;
+                    DELETE FROM nodeerr_last WHERE rowid NOT IN (SELECT MIN(rowid) FROM nodeerr_last GROUP BY nodeid,nodeerrts,jobid,pid,user,msgcls,msg,pid,gid);
+                    DELETE FROM nodeerr_last WHERE (nodeid||nodeerrts) IN (SELECT nodeid||oldestts FROM nodeerr_last_stat WHERE cnt>5);
+        columns: 
+          - { name: nodeid,          type: nodeid_t }
+          - { name: nodeerrts,       type: ts_t }
+          - { name: jobid,           type: jobid_t }
+          - { name: cmd,             type: longstr_t }
+          - { name: pid,             type: pid_t }
+          - { name: user,            type: owner_t }
+          - { name: msgcls,          type: cnt_t } 
+          - { name: msg,             type: extralongstr_t }
+          - { name: uid,             type: pid_t }
+          - { name: gid,             type: pid_t }
+
+    - table:
+        name: nodeerr_last_stat
+        columns: 
+          - { name: nodeid,          type: nodeid_t }
+          - { name: cnt,             type: cnt_t } 
+          - { name: oldestts,        type: ts_t }
+          
+    - table:
+        name: nodeerr_stat_by_node_by_msgcls 
+        options:
+          update:
+            sql_update_contents:
+               sql: DELETE FROM nodeerr_stat_by_node_by_msgcls;
+                    INSERT INTO nodeerr_stat_by_node_by_msgcls (nodeid,c0_cnt,c1_cnt,c2_cnt,c3_cnt)
+                    SELECT 
+                      nodeid,
+                      SUM(CASE WHEN msgcls = '0' THEN 1 ELSE 0 END) AS c0_cnt,
+                      SUM(CASE WHEN msgcls = '1' THEN 1 ELSE 0 END) AS c1_cnt,
+                      SUM(CASE WHEN msgcls = '2' THEN 1 ELSE 0 END) AS c2_cnt,
+                      SUM(CASE WHEN msgcls = '3' THEN 1 ELSE 0 END) AS c3_cnt
+                    FROM nodeerr
+                    GROUP BY nodeid;
+        columns: 
+          - { name: nodeid,          type: nodeid_t }
+          - { name: c0_cnt,          type: cnt_t } 
+          - { name: c1_cnt,          type: cnt_t } 
+          - { name: c2_cnt,          type: cnt_t } 
+          - { name: c3_cnt,          type: cnt_t } 
+
+    - table:
+        name: nodeerr_stat_by_day
+        options:
+          update:
+            sql_update_contents:
+               sql: DELETE FROM nodeerr_stat_by_day;
+                    INSERT INTO nodeerr_stat_by_day (nodeid, day, ts, tcnt)
+                    SELECT
+                        nodeid,
+                        strftime('%Y-%m-%d', nodeerrts, 'unixepoch', 'localtime') AS day,
+                        MAX(nodeerrts) AS ts,
+                        COUNT(*) AS tcnt
+                    FROM nodeerr
+                    GROUP BY nodeid, day;
+          archive:
+            # Enforce the 21 day rolling window on the aggregated table as well
+            limit: max(ts)-21d
+        columns: 
+          - { name: nodeid,          type: nodeid_t }
+          - { name: day,             type: date_t } 
+          - { name: ts,              type: ts_t }
+          - { name: tcnt,            type: cnt_t }

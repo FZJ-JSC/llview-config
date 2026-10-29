@@ -1,0 +1,212 @@
+fsusagestate_all:
+  tables:
+    
+    # additional common tables jobmapts, jobmapnode 
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #---------------------------
+    # table, filled by LML input
+    #---------------------------
+    - table:
+        name: fsusage
+        options:
+          update:
+            LML: ionode
+            LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+            mode: add
+          update_trigger:
+            - fsusage_aggr_by_ts
+            - fsusage_time_aggr_ts
+            - node_update_status
+            - fsusage_aggr_by_node
+            - fsusage_current_jobid
+            - fsusage_jobmap_by_nd_ts
+            - fsusage_by_jobid_nodeid_ts
+            - fsusage_aggr_by_jobid_ts
+            - fsusage_aggr_by_jobid
+            - fsusage_login_time_aggr
+          archive:
+            limit: max(ts)-25h
+          index: nodeid,ts
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,          LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,       LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted}
+          - { name: fs,          type: fs_t,       LML_valuelist: 'all',  LML_default: "-" }
+          - { name: dts,         type: count_t,    LML_from: fs_dts_$fs,  LML_default: 60}
+          - { name: bw,          type: bytes_t,    LML_from: fs_bw_$fs,   LML_default: 0 } # bytes written in last time interval
+          - { name: br,          type: bytes_t,    LML_from: fs_br_$fs,   LML_default: 0 } # bytes read in last time interval
+          - { name: oc,          type: ops_t,      LML_from: fs_oc_$fs,   LML_default: 0 }
+
+    %include "fsusage_per_fs_aggr_tables.yaml"
+
+fsusagestate_project:
+  tables:
+    
+    # additional common tables jobmapts, jobmapnode 
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #---------------------------
+    # table, filled by LML input
+    #---------------------------
+    - table:
+        name: fsusage
+        options:
+          update:
+            LML: ionode
+            LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+            mode: add
+          update_trigger:
+            - fsusage_aggr_by_ts
+            - fsusage_time_aggr_ts
+            - node_update_status
+            - fsusage_aggr_by_node
+            - fsusage_current_jobid
+            - fsusage_jobmap_by_nd_ts
+            - fsusage_by_jobid_nodeid_ts
+            - fsusage_aggr_by_jobid_ts
+            - fsusage_aggr_by_jobid
+            - fsusage_login_time_aggr
+          archive:
+            limit: max(ts)-25h
+          index: nodeid,ts
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,          LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,       LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted}
+          - { name: fs,          type: fs_t,       LML_valuelist: 'project1',  LML_default: "-" }
+          - { name: dts,         type: count_t,    LML_from: fs_dts_$fs,  LML_default: 60}
+          - { name: bw,          type: bytes_t,    LML_from: fs_bw_$fs,   LML_default: 0 } # bytes written in last time interval
+          - { name: br,          type: bytes_t,    LML_from: fs_br_$fs,   LML_default: 0 } # bytes read in last time interval
+          - { name: oc,          type: ops_t,      LML_from: fs_oc_$fs,   LML_default: 0 }
+
+    %include "fsusage_per_fs_aggr_tables.yaml"
+
+
+fsusagestate_scratch:
+  tables:
+    
+    # additional common tables jobmapts, jobmapnode 
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #---------------------------
+    # table, filled by LML input
+    #---------------------------
+    - table:
+        name: fsusage
+        options:
+          update:
+            LML: ionode
+            LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+            mode: add
+          update_trigger:
+            - fsusage_aggr_by_ts
+            - fsusage_time_aggr_ts
+            - node_update_status
+            - fsusage_aggr_by_node
+            - fsusage_current_jobid
+            - fsusage_jobmap_by_nd_ts
+            - fsusage_by_jobid_nodeid_ts
+            - fsusage_aggr_by_jobid_ts
+            - fsusage_aggr_by_jobid
+            - fsusage_login_time_aggr
+          archive:
+            limit: max(ts)-25h
+          index: nodeid,ts
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,          LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,       LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted}
+          - { name: fs,          type: fs_t,       LML_valuelist: 'scratch',  LML_default: "-" }
+          - { name: dts,         type: count_t,    LML_from: fs_dts_$fs,  LML_default: 60}
+          - { name: bw,          type: bytes_t,    LML_from: fs_bw_$fs,   LML_default: 0 } # bytes written in last time interval
+          - { name: br,          type: bytes_t,    LML_from: fs_br_$fs,   LML_default: 0 } # bytes read in last time interval
+          - { name: oc,          type: ops_t,      LML_from: fs_oc_$fs,   LML_default: 0 }
+
+    %include "fsusage_per_fs_aggr_tables.yaml"
+
+
+fsusagestate_home:
+  tables:
+    
+    # additional common tables jobmapts, jobmapnode 
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #---------------------------
+    # table, filled by LML input
+    #---------------------------
+    - table:
+        name: fsusage
+        options:
+          update:
+            LML: ionode
+            LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+            mode: add
+          update_trigger:
+            - fsusage_aggr_by_ts
+            - fsusage_time_aggr_ts
+            - node_update_status
+            - fsusage_aggr_by_node
+            - fsusage_current_jobid
+            - fsusage_jobmap_by_nd_ts
+            - fsusage_by_jobid_nodeid_ts
+            - fsusage_aggr_by_jobid_ts
+            - fsusage_aggr_by_jobid
+            - fsusage_login_time_aggr
+          archive:
+            limit: max(ts)-25h
+          index: nodeid,ts
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,          LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,       LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted}
+          - { name: fs,          type: fs_t,       LML_valuelist: 'home',  LML_default: "-" }
+          - { name: dts,         type: count_t,    LML_from: fs_dts_$fs,  LML_default: 60}
+          - { name: bw,          type: bytes_t,    LML_from: fs_bw_$fs,   LML_default: 0 } # bytes written in last time interval
+          - { name: br,          type: bytes_t,    LML_from: fs_br_$fs,   LML_default: 0 } # bytes read in last time interval
+          - { name: oc,          type: ops_t,      LML_from: fs_oc_$fs,   LML_default: 0 }
+
+    %include "fsusage_per_fs_aggr_tables.yaml"
+
+fsusagestate_fastdata:
+  tables:
+    
+    # additional common tables jobmapts, jobmapnode 
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #---------------------------
+    # table, filled by LML input
+    #---------------------------
+    - table:
+        name: fsusage
+        options:
+          update:
+            LML: ionode
+            LLgenDB: set_node2nid(nodeid,nodeinfo,nodeid,nid)
+            mode: add
+          update_trigger:
+            - fsusage_aggr_by_ts
+            - fsusage_time_aggr_ts
+            - node_update_status
+            - fsusage_aggr_by_node
+            - fsusage_current_jobid
+            - fsusage_jobmap_by_nd_ts
+            - fsusage_by_jobid_nodeid_ts
+            - fsusage_aggr_by_jobid_ts
+            - fsusage_aggr_by_jobid
+            - fsusage_login_time_aggr
+          archive:
+            limit: max(ts)-25h
+          index: nodeid,ts
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,          LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,       LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted}
+          - { name: fs,          type: fs_t,       LML_valuelist: 'data1',  LML_default: "-" }
+          - { name: dts,         type: count_t,    LML_from: fs_dts_$fs,  LML_default: 60}
+          - { name: bw,          type: bytes_t,    LML_from: fs_bw_$fs,   LML_default: 0 } # bytes written in last time interval
+          - { name: br,          type: bytes_t,    LML_from: fs_br_$fs,   LML_default: 0 } # bytes read in last time interval
+          - { name: oc,          type: ops_t,      LML_from: fs_oc_$fs,   LML_default: 0 }
+
+    %include "fsusage_per_fs_aggr_tables.yaml"
+

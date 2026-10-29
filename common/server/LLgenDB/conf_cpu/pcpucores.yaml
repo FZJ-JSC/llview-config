@@ -1,0 +1,574 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+pcpucoresstate:
+  tables:
+    # common tables jobmapts, jobmapnode
+    %include "../conf_common/jobmap_tables.yaml"
+    %include "../conf_common/nodeinfo_tables.yaml"
+
+    #----------------------------
+    # tables, filled by LML input
+    #----------------------------
+    # nodespec
+    # - this import is only needed for distinguish between CPU and GPU nodes
+    #   and smt configuation
+    - table:
+        name: nodespec
+        options:
+          update:
+            LML: node
+            mode: replace
+          index: nodeid, ncores, nsmts, ngpus
+        columns: 
+          - { name: nodeid,      type: nodeid_t,   LML_from: id,       LML_default: 'unknown' }
+          - { name: ngpus,       type: count_t,    LML_from: gpus,     LML_default: 0 }
+          - { name: ncores,      type: count_t,    LML_from: ncores,   LML_default: 0 }
+          - { name: nsmts,       type: count_t,    LML_from: nsmts,    LML_default: 0 }
+          
+    #--------------------------------------------------------
+    # pcpucores
+    # - main import table, contains for each node and each core on a node the usage of the physical and the virtual core
+    # 
+    - table:
+        name: pcpucores
+        options:
+          update:
+            LML: pcoreinfo
+            mode: replace
+          update_trigger:
+            - coreids
+            - pcpucores_jobmap_by_nd_ts
+            - pcpucores_current_jobid
+            - pcpucores_by_jobid_nodeid_current
+            - pcpucores_by_jobid_nodeid_coreid_current
+            - pcpucores_aggr_jobid_nodeid_coreid_avg
+            - pcpucores_aggr_jobid_coreid_avg
+            - pcpucores_aggr_jobid_avg
+            - pcpucores_pattern_id_map
+            - pcpucores_time_aggr_span_avg
+            - pcpucores_time_aggr_coreid_span_avg
+        columns: 
+          - { name: nodeid,      type: nodeid_t,        LML_from: name,        LML_default: 'unknown' }
+          - { name: ts,          type: ts_t,            LML_from: ts,          LML_default: -1,  LML_minlastinsert: mintsinserted }
+          - { name: usage,       type: extralongstr_t,  LML_from: percore,     LML_default: "" }
+          
+
+          
+    #------------------------------------------
+    # table: mapping core usage to current jobs 
+    #------------------------------------------
+    # pcpucores_by_jobid_nodeid_coreid_current
+    # - contain node/core usage for those nodes which are currently used by active jobs
+    # - steps:
+    #   1. clean table
+    #   2. join pcpucores and pcpucores_jobmap_by_nd_ts
+    #
+    # - size: contains only entries for current active jobs
+    #
+    - table:
+        name: pcpucores_by_jobid_nodeid_current 
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: mintsinserted
+              sql: DELETE FROM pcpucores_by_jobid_nodeid_current;
+                   INSERT INTO pcpucores_by_jobid_nodeid_current
+                              (jobid,ts,nodeid,usage)
+                              SELECT jnt.jobid, cc.ts, cc.nodeid, cc.usage
+                              FROM pcpucores_jobmap_by_nd_ts jnt, pcpucores cc
+                              WHERE  (cc.ts = jnt.ts) AND (jnt.nodeid=cc.nodeid)
+          index:
+            - jobid,nodeid,ts,usage
+            - jobid
+        columns: 
+          - { name: jobid,       type: jobid_t }
+          - { name: ts,          type: ts_t }
+          - { name: nodeid,      type: nodeid_t }
+          - { name: usage,       type: extralongstr_t }
+
+
+    #------------------------------------------
+    # table: mapping core usage to current jobs (expanded table)
+    #------------------------------------------
+    # pcpucores_by_jobid_nodeid_coreid_current
+    # - contain node/core usage for those nodes which are currently used by active jobs
+    # - steps:
+    #   1. clean table
+    #
+    # - size: contains only entries for current active jobs
+    #
+    - table:
+        name: pcpucores_by_jobid_nodeid_coreid_current 
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: mintsinserted
+              sql:  PRAGMA journal_mode   = OFF;
+                    BEGIN;
+                    DELETE FROM pcpucores_by_jobid_nodeid_coreid_current;
+                    INSERT INTO pcpucores_by_jobid_nodeid_coreid_current
+                            (jobid, ts, nodeid, coreid, usage)
+                    SELECT  c.jobid,
+                            c.ts,
+                            c.nodeid,
+                            ci.i,
+                            MAX(0.0,
+                                CAST(COALESCE(json_extract(c.usage,
+                                     '$['||ci.i||']'),0.0) AS REAL)) AS usage
+                    FROM    pcpucores_by_jobid_nodeid_current   AS c
+                    JOIN    nodespec n ON c.nodeid = n.nodeid
+                    JOIN    coreids ci ON ci.i BETWEEN 0 AND (n.ncores-1);
+                    COMMIT;
+                    PRAGMA journal_mode = WAL;
+          unique_index:
+            - jobid, nodeid, coreid, ts
+        columns: 
+          - { name: jobid,       type: jobid_t }
+          - { name: ts,          type: ts_t }
+          - { name: nodeid,      type: nodeid_t }
+          - { name: coreid,      type: cores_t }
+          - { name: usage,       type: usage_t }
+          
+        
+    #----------------------------------------------------------------
+    # derived tables
+    #----------------------------------------------------------------
+    # pcpucores_aggr_jobid_nodeid_coreid_avg
+    # - aggregation over time per job
+    # - keep only per job info: min/avg/max of ts and usage
+    # - steps:
+    # 2. compute and insert aggregated values for new jobs
+    # 3. compute and insert aggregated values for existing jobs (join with *-last table)
+    #
+    # - size: contains aggregated info about jobs which ended in the last 2 hours,
+    #          this window could be further reduced (e.g. 15min)
+    # cleanup after error:  delete from pcpucores_aggr_jobid_nodeid_coreid_avg where jobid||nodeid||coreid in (select jobid||nodeid||coreid num from pcpucores_aggr_jobid_nodeid_coreid_avg group by jobid,nodeid,coreid having count(*)>1);
+    #
+
+    - table:
+        name: pcpucores_aggr_jobid_nodeid_coreid_avg
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: mintsinserted
+              sql: PRAGMA journal_mode   = OFF;
+                   BEGIN;
+                   INSERT INTO pcpucores_aggr_jobid_nodeid_coreid_avg
+                               (jobid, nodeid, coreid,
+                                ts, ts_min, ts_max,
+                                cnt,
+                                usage_min, usage_avg, usage_max)
+                         SELECT c.jobid,c.nodeid, c.coreid,
+                                c.ts, c.ts, c.ts,                
+                                1,                   
+                                c.usage, c.usage, c.usage
+                         FROM  pcpucores_by_jobid_nodeid_coreid_current AS c
+                         WHERE true
+                    ON CONFLICT(jobid, nodeid, coreid)
+                         DO UPDATE SET
+                            cnt       = cnt + excluded.cnt,
+                            ts        = excluded.ts,
+                            ts_min    = MIN(ts_min,    excluded.ts_min),
+                            ts_max    = MAX(ts_max,    excluded.ts_max),
+                            usage_min = MIN(usage_min, excluded.usage_min),
+                            usage_max = MAX(usage_max, excluded.usage_max),
+                            usage_avg = (usage_avg * cnt + excluded.usage_avg * excluded.cnt) / (cnt + excluded.cnt);
+                   COMMIT;
+                   PRAGMA journal_mode = WAL;
+          archive:
+            limit: max(ts)-2h
+          unique_index:
+            - jobid, nodeid, coreid
+          index:
+            - jobid
+        columns: 
+          - { name: jobid,       type: jobid_t }
+          - { name: nodeid,      type: nodeid_t }
+          - { name: coreid,      type: cores_t }
+          - { name: ts,          type: ts_t }
+          - { name: cnt,         type: cnt_t }
+          - { name: ts_min,      type: ts_t }
+          - { name: ts_max,      type: ts_t }
+          - { name: usage_min,   type: usage_t }
+          - { name: usage_avg,   type: usage_t }
+          - { name: usage_max,   type: usage_t }
+         
+
+    #--------------------------------------------------------
+    # table: further aggregation 
+    #         
+    #--------------------------------------------------------
+    # pcpucores_aggr_jobid_coreid_avg
+    # - further aggregation of per core usage per job
+    # - aggregation over nodes
+    # - steps
+    #   1. remove entries of active jobs
+    #   2. compute and insert aggregated values for active jobs, set flag about gpu-node from table nodespec
+    #
+    # - size: entries about all cores of all jobs which ended in the last 1 days
+    #         we need that time span to compute later the node-h used by each pattern in this time frame    
+    #  
+    - table:
+        name: pcpucores_aggr_jobid_coreid_avg
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: mintsinserted
+              sql: PRAGMA journal_mode   = OFF;
+                   BEGIN;
+                   DELETE FROM pcpucores_aggr_jobid_coreid_avg WHERE jobid IN (select jobid FROM pcpucores_current_jobid);
+                   INSERT INTO pcpucores_aggr_jobid_coreid_avg
+                              (jobid, ts, coreid, cnt_avg,
+                               usage_min, usage_avg, usage_max, gpu, nnodes, wall,
+                               phys_coreid, smtid)
+                          SELECT  p.jobid,
+                                  MAX(p.ts)                                     AS ts,
+                                  p.coreid,
+                                  AVG(p.cnt)                                    AS cnt_avg,
+                                  MIN(p.usage_min)                              AS usage_min,
+                                  AVG(p.usage_avg)                              AS usage_avg,
+                                  MAX(p.usage_max)                              AS usage_max,
+                                  SUM(n.ngpus) > 0                              AS gpu,
+                                  COUNT(p.nodeid)                               AS nnodes,
+                                  (MAX(p.ts_max)-MIN(p.ts_min))/3600.0          AS wall,
+                                  CASE 
+                                  WHEN n.ncores > 0 AND n.nsmts > 0 THEN (p.coreid % (n.ncores / n.nsmts))
+                                  ELSE p.coreid 
+                                  END AS phys_coreid,
+                                  CASE 
+                                  WHEN n.ncores > 0 AND n.nsmts > 0 THEN (p.coreid / (n.ncores / n.nsmts))
+                                  ELSE 0 
+                                  END AS smtid
+                          FROM    pcpucores_aggr_jobid_nodeid_coreid_avg p
+                          JOIN    nodespec n          ON p.nodeid = n.nodeid
+                          JOIN    pcpucores_current_jobid cur ON cur.jobid = p.jobid
+                          WHERE   p.ts_min>0 AND p.ts_max>0
+                          GROUP BY p.jobid, p.coreid;
+                   COMMIT;
+                   PRAGMA journal_mode = WAL;            
+          index:
+            - jobid,coreid,ts,usage_min,usage_avg,usage_max,gpu,nnodes,wall
+            - jobid,phys_coreid,smtid,ts,usage_min,usage_avg,usage_max
+          archive:
+            limit: max(ts)-3d
+        columns: 
+          - { name: jobid,       type: jobid_t }
+          - { name: ts,          type: ts_t }
+          - { name: coreid,      type: cores_t }
+          - { name: cnt_avg,     type: cnt_t }
+          - { name: usage_min,   type: usage_t }
+          - { name: usage_avg,   type: usage_t }
+          - { name: usage_max,   type: usage_t }
+          - { name: gpu,         type: cnt_t }
+          - { name: nnodes,      type: cnt_t }
+          - { name: wall,        type: hour_t }
+          - { name: phys_coreid, type: cores_t }
+          - { name: smtid,       type: int_t }
+
+          
+    #---------------------------------------
+    #  pcpucores_aggr_jobid_avg
+    #  - further aggregation over cores
+    #  - reassemble current pattern, operations required because patterns of jobs could change
+    #     over time   
+    #  - steps:
+    #    --> maintain table pcpucores_current_pattern  
+    #    1. delete all pattern 
+    #    2. add patterns of active jobs
+    #    3. add patterns of jobs older as 3 days
+    #
+    #    --> maintain table pcpucores_aggr_jobid_avg
+    #    4. delete entries of jobs older than 3 days
+    #    5. delete entries of active jobs
+    #    6. compute and insert aggregated entries for active jobs
+    #
+    #    --> maintain table pcpucores_current_pattern
+    #    7. delete current patterns
+    #    8. insert current patterns
+    #
+    #    - size: one entry per job which ended in the last 1 day
+    
+    - table:
+        name: pcpucores_aggr_jobid_avg
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: LIMIT=0.25,mintsinserted
+              sql:
+                   DELETE FROM pcpucores_current_pattern;
+                   INSERT INTO pcpucores_current_pattern (pattern)
+                        SELECT DISTINCT pattern FROM pcpucores_aggr_jobid_avg
+                        WHERE  jobid IN (select jobid FROM pcpucores_current_jobid);
+                   INSERT INTO pcpucores_current_pattern (pattern)
+                        SELECT DISTINCT pattern FROM pcpucores_aggr_jobid_avg
+                        WHERE  jobid IN (SELECT DISTINCT jobid
+                                         FROM pcpucores_aggr_jobid_coreid_avg
+                                         WHERE (ts < TS_NOW - (1 * 24.1 * 3600.0) ) ) ;
+                   DELETE FROM pcpucores_aggr_jobid_avg WHERE jobid IN (select DISTINCT jobid
+                                                                        FROM pcpucores_aggr_jobid_coreid_avg
+                                                                        WHERE (ts < TS_NOW - (1 * 24.1 * 3600.0)));
+                   DELETE FROM pcpucores_aggr_jobid_avg WHERE jobid IN (SELECT jobid FROM pcpucores_current_jobid);
+                   INSERT INTO pcpucores_aggr_jobid_avg
+                               (jobid, cores_lastts, cores_ndps,
+                                usage_min, usage_avg, usage_max,
+                                gpu, nnodes, wall, pattern, ncores_used)
+                               SELECT jobid, MAX(ts), AVG(cnt_avg),
+                                      MIN(usage_min), AVG(usage_avg), MAX(usage_max),
+                                      MAX(gpu), MAX(nnodes), MAX(wall),
+                                      GROUP_CONCAT(usage_avg>LIMIT, ''),
+                                      SUM(usage_avg>LIMIT)
+                               FROM   (
+                                 SELECT * FROM pcpucores_aggr_jobid_coreid_avg
+                                 WHERE  jobid IN (SELECT jobid FROM pcpucores_current_jobid)
+                                 ORDER BY phys_coreid ASC, smtid ASC
+                               ) p 
+                               GROUP BY jobid;
+                   DELETE FROM pcpucores_current_pattern
+                        WHERE pattern IN (
+                           SELECT distinct pattern FROM pcpucores_aggr_jobid_avg
+                           WHERE  jobid IN (select jobid FROM pcpucores_current_jobid) );
+                   INSERT INTO pcpucores_current_pattern (pattern)
+                        SELECT distinct pattern FROM pcpucores_aggr_jobid_avg
+                        WHERE  jobid IN (select jobid FROM pcpucores_current_jobid)
+          index:
+            - jobid,pattern,cores_lastts,gpu
+            - jobid,cores_lastts,pattern,gpu
+            - pattern
+          archive:
+            limit: max(cores_lastts)-3d
+        columns: 
+          - { name: jobid,        type: jobid_t }
+          - { name: cores_lastts, type: ts_t }
+          - { name: cores_ndps,   type: cnt_t }
+          - { name: usage_min,    type: usage_t }
+          - { name: usage_avg,    type: usage_t }
+          - { name: usage_max,    type: usage_t }
+          - { name: gpu,          type: cnt_t }
+          - { name: nnodes,       type: cnt_t }
+          - { name: wall,         type: hour_t }
+          - { name: ncores_used,  type: cnt_t }
+          - { name: pattern,      type: llongstr_t }
+
+          
+    #---------------------------------------
+    # table: id to pattern mapping
+    #---------------------------------------
+    # pcpucores_pattern_id_map
+    # - id to pattern mapping
+    # - primary key (automatic increase of id)
+    # 
+    # size: growing, not limited (maybe an issue)
+     
+    - table:
+        name: pcpucores_pattern_id_map
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              sql:
+                   INSERT INTO pcpucores_pattern_id_map (pattern)
+                               SELECT distinct pattern 
+                               FROM   pcpucores_aggr_jobid_avg
+                               WHERE  pattern NOT IN (select pattern FROM pcpucores_pattern_id_map);
+                   DELETE FROM pcpucores_pattern_id_map WHERE pattern NOT IN
+                               ( SELECT DISTINCT pattern FROM pcpucores_aggr_jobid_avg);
+          index:
+            - pattern, id 
+        columns: 
+          - { name: id,       type: primary_key_t }
+          - { name: pattern,  type: llongstr_t }
+
+          
+    #---------------------------------------------
+    # table: per pattern statistics
+         
+    #        
+    #---------------------------------------------
+    # pcpucores_time_aggr_coreid_span_avg
+    # - usage statistics per usage pattern
+    # - aggr. last 1 days  (end time of job)
+    #
+    # - steps:
+    #   1. delete entries for current patterns
+    #   2. compute and add entries for current patterns
+    
+    - table:
+        name: pcpucores_time_aggr_span_avg
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              vars: mintsinserted
+              sql:
+                   DELETE FROM pcpucores_time_aggr_span_avg WHERE pattern IN (select pattern FROM pcpucores_current_pattern);
+                   INSERT INTO pcpucores_time_aggr_span_avg
+                               (pid,pattern,gpu,min_ts,max_ts,
+                                usage_min,usage_avg,usage_max, nodeh,njobs,ncores_used,jobids)
+                               SELECT m.id, p.pattern, p.gpu,
+                                      MIN(p.cores_lastts),MAX(p.cores_lastts),
+                                      MAX(0.0, MIN(p.usage_min)), MAX(0.0, AVG(p.usage_avg)), MAX(0.0, MAX(p.usage_max)),
+                                      SUM(p.nnodes * p.wall),
+                                      count(p.jobid),MAX(p.ncores_used),
+                                      GROUP_CONCAT(p.jobid,' ')
+                               FROM   pcpucores_aggr_jobid_avg p, pcpucores_pattern_id_map m
+                               WHERE  p.cores_ndps>5 AND
+                                      p.pattern IN (select pattern FROM pcpucores_current_pattern) AND
+                                      p.pattern=m.pattern AND p.cores_lastts >= TS_NOW - (1 * 24.1 * 3600.0)
+                               GROUP BY p.pattern,p.gpu;
+                   DELETE FROM pcpucores_time_aggr_span_avg WHERE pattern NOT IN (SELECT DISTINCT pattern FROM pcpucores_aggr_jobid_avg);
+          index: pattern, gpu, min_ts, max_ts
+        columns: 
+          - { name: pid,          type: int_t }
+          - { name: pattern,      type: llongstr_t }
+          - { name: gpu,          type: cnt_t }
+          - { name: min_ts,       type: ts_t }
+          - { name: max_ts,       type: ts_t }
+          - { name: usage_min,    type: usage_t }
+          - { name: usage_avg,    type: usage_t }
+          - { name: usage_max,    type: usage_t }
+          - { name: nodeh,        type: cnt_f_t }
+          - { name: njobs,        type: cnt_t }
+          - { name: ncores_used,  type: cnt_t }
+          - { name: jobids,       type: extralongstr_t }
+
+          
+    #---------------------------------------------------
+    # table: per core usage statistics per usage pattern
+    #        aggr. per day (end time of job) 
+    #---------------------------------------------------
+    #                 CREATE INDEX idx_tmp_job_core ON tmp_job_core(pattern, gpu, phys_coreid, smtid);
+
+    - table:
+        name: pcpucores_time_aggr_coreid_span_avg
+        options:
+          update:
+            sql_update_contents:
+              sqldebug: 0
+              sql:
+                PRAGMA journal_mode   = OFF;
+                PRAGMA temp_store = MEMORY;
+                DELETE FROM pcpucores_time_aggr_coreid_span_avg WHERE pattern IN (SELECT pattern FROM pcpucores_current_pattern);
+                   INSERT OR REPLACE INTO pcpucores_time_aggr_coreid_span_avg
+                               (pid, pattern, gpu, ts, phys_coreid, smtid, usage_min, usage_avg, usage_max)
+                   SELECT  m.id, j.pattern,  j.gpu,
+                           MAX(c.ts) AS max_ts,
+                           c.phys_coreid,
+                           c.smtid,
+                           CASE WHEN MIN(c.usage_min)>0 THEN MIN(c.usage_min) ELSE 0 END  AS usage_min,
+                           CASE WHEN AVG(c.usage_avg)>0 THEN AVG(c.usage_avg) ELSE 0 END  AS usage_avg,
+                           CASE WHEN MAX(c.usage_max)>0 THEN MAX(c.usage_max) ELSE 0 END  AS usage_max
+                  FROM  pcpucores_aggr_jobid_coreid_avg   AS c
+                  JOIN  pcpucores_aggr_jobid_avg          AS j
+                        ON c.jobid = j.jobid
+                  JOIN  pcpucores_pattern_id_map          AS m
+                        ON j.pattern = m.pattern
+                  JOIN  pcpucores_current_pattern         AS cp
+                        ON cp.pattern = j.pattern  
+                  WHERE j.cores_ndps>5 AND
+                        j.cores_lastts >= (TS_NOW - (1 * 24.1 * 3600.0))
+                  GROUP BY j.pattern, j.gpu, c.phys_coreid, c.smtid
+                  ORDER BY j.pattern, j.gpu, c.phys_coreid, c.smtid;
+                 DELETE FROM pcpucores_time_aggr_coreid_span_avg
+                 WHERE pattern NOT IN (SELECT DISTINCT pattern FROM pcpucores_aggr_jobid_avg);
+                 PRAGMA journal_mode = WAL;            
+          unique_index: pattern, gpu, phys_coreid, smtid
+          index:
+            - ts, phys_coreid, smtid, usage_min, usage_avg, usage_max
+        columns: 
+          - { name: pid,          type: int_t }
+          - { name: pattern,      type: llongstr_t }
+          - { name: gpu,          type: cnt_t }
+          - { name: ts,           type: ts_t }
+          - { name: phys_coreid,  type: cores_t }
+          - { name: smtid,        type: int_t }
+          - { name: usage_min,    type: usage_t }
+          - { name: usage_avg,    type: usage_t }
+          - { name: usage_max,    type: usage_t }
+
+          
+    #----------------------------
+    # temp. tables to speed joins 
+    #----------------------------
+    - table:
+        name: pcpucores_jobmap_by_nd_ts
+        options:
+          update:
+            sql_update_contents:
+              vars: mintsinserted
+              sql: DELETE FROM pcpucores_jobmap_by_nd_ts;
+                   INSERT INTO pcpucores_jobmap_by_nd_ts
+                        SELECT jt.jobid, jn.nodeid, jt.ts
+                               FROM jobnodemap jn, jobtsmap jt
+                               WHERE (jt.ts >= mintsinserted) AND (jt.jobid=jn.jobid);
+          update_trigger:
+        columns: 
+          - { name: jobid,    type: jobid_t }
+          - { name: nodeid,   type: nodeid_t }
+          - { name: ts,       type: ts_t    }
+    - table:
+        name: pcpucores_current_jobid
+        options:
+          update:
+            sql_update_contents:
+              vars: mintsinserted
+              sql: DELETE FROM pcpucores_current_jobid;
+                   INSERT INTO pcpucores_current_jobid (jobid)
+                        SELECT jt.jobid FROM jobtsmap jt WHERE (jt.ts >= mintsinserted);
+          index:
+            - jobid
+          update_trigger:
+        columns: 
+          - { name: jobid,    type: jobid_t }
+
+    #---------------------------------------------------
+    # table: help table
+    #---------------------------------------------------
+    # pcpucores_current_pattern
+    # - table contain pattern which are affected by the last add operation 
+    #
+    - table:
+        name: pcpucores_current_pattern
+        options:
+          index:
+            - pattern
+        columns: 
+          - { name: pattern,      type: llongstr_t }
+
+
+    #---------------------------------------------------
+    # table: coreids 
+    #---------------------------------------------------
+    # coreids 
+    # - table contain coreids
+    #
+    - table:
+        name: coreids
+        options:
+          update:
+            sql_update_contents:
+              # Dynamically generate numbers up to the absolute largest core count in the cluster
+              sql:  DELETE FROM coreids;
+                    WITH RECURSIVE cte_cores(i) AS (
+                      SELECT 0
+                      UNION ALL
+                      SELECT i + 1 FROM cte_cores WHERE i < (SELECT MAX(ncores) - 1 FROM nodespec)
+                    )
+                    INSERT INTO coreids (i)
+                    SELECT i FROM cte_cores;
+          index: i
+        columns: 
+          - { name: i,      type: int_t }

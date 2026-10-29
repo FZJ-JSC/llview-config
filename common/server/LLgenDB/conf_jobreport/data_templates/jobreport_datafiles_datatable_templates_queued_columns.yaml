@@ -1,0 +1,233 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+# The primary identifier is pinned for continuous visibility
+- {
+    field: "jobid",
+    headerName: "JobID",
+    headerTooltip: "Slurm JobID",
+    cellDataType: "number",
+    valueGetter: "(params) => params.data ? parseInt(params.data.jobid, 10) : null",
+    pinned: "left",
+    minWidth: 75,
+    maxWidth: 90,
+  }
+
+# General job properties are grouped, now including extended details like QOS and Priority
+- {
+    headerName: "General Info",
+    groupId: "Info",
+    children: [
+      {
+        field: "userprio",
+        headerName: "Priority", 
+        headerTooltip: "Job priority",
+        cellDataType: "number",
+      },
+      {
+        field: "owner",
+        headerName: "Owner", 
+        headerTooltip: "User owner of the job",
+        cellDataType: "text",
+        cellRenderer: "(params) => gen_project_user_link(params,'/data/ll/user','account')",
+      },
+      {
+        field: "account",
+        headerName: "Project",
+        headerTooltip: "Budget used for job submission",
+        cellDataType: "text", 
+        cellRenderer: "(params) => gen_project_link(params,'/data/ll/project')",
+      },
+      {
+        field: "queue",
+        headerName: "Queue",
+        cellDataType: "text",
+        headerTooltip: "Slurm partition",
+      },
+      {
+        field: "qos",
+        headerName: "QOS",
+        cellDataType: "text",
+        headerTooltip: "Quality of Service (normal, lowcont, nocont)",
+      },
+    ]
+  }
+
+# Mentor is kept as a standalone column matching standard conventions
+- { 
+    field: "mentor",
+    cellDataType: "text", 
+    headerName: "Mentor", 
+    cellRenderer: "(params) => gen_mentor_link(params,'/data/ll/mentor')",
+    headerTooltip: "Mentor of the project",
+  }
+
+# Detailed queue status metrics tracking delays and blockers
+- {
+    headerName: "Queue Status",
+    groupId: "QueueStatus",
+    children: [
+      { 
+        field: "state",
+        headerName: "State",
+        cellDataType: "text",
+        headerTooltip: "State of the Job",
+      },
+      { 
+        field: "posinqueue",
+        headerName: "Position",
+        cellDataType: "number",
+        headerTooltip: "Current position of job in queue",
+      },
+      { 
+        field: "timetostart",
+        headerName: "Time to Start",
+        headerTooltip: "Estimated waiting time until job starts",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "waittime",
+        headerName: "Wait Time",
+        headerTooltip: "Time since job was enqueued",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      {
+        field: "reason",
+        headerName: "Reason",
+        headerTooltip: "Reason job could not be scheduled yet",
+        cellDataType: "text",
+        cellClass: "text-left",
+        columnGroupShow: "open",
+      },
+    ]
+  }
+
+# Core scheduling parameters utilizing custom formatters
+- {
+    headerName: "Scheduler",
+    groupId: "Scheduler",
+    children: [
+      { 
+        field: "queuedate",
+        cellDataType: "dateString",
+        headerName: "Queue Date",
+        headerTooltip: "Date job was enqueued",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+        width: 150,
+        minWidth: 150,
+      },
+      { 
+        field: "starttime",
+        cellDataType: "dateString",
+        headerName: "Start Date (est)",
+        headerTooltip: "Start date (or estimate) of the job",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+        width: 150,
+        minWidth: 150,
+      },
+      { 
+        field: "endtime",
+        columnGroupShow: "open",
+        cellDataType: "dateString",
+        headerName: "End Date (est)",
+        headerTooltip: "End date (or estimate) of the job",
+        filter: "DateTimeParentFilter",
+        floatingFilterComponent: "DateFloatingFilterComponent",
+        width: 150,
+        minWidth: 150,
+      },
+      { 
+        field: "wall",
+        headerName: "Walltime",
+        headerTooltip: "Requested walltime",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "runtime",
+        columnGroupShow: "open",
+        headerName: "Runtime",
+        headerTooltip: "Overall runtime",
+        cellDataType: "timeInterval",
+        filter: "TimeIntervalParentFilter",
+        floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+      },
+      { 
+        field: "numnodes",
+        cellDataType: "number",
+        headerName: "#Nodes",
+        headerTooltip: "Number of nodes used by the job",
+      },
+      {
+        field: "restart",
+        headerName: "Restart",
+        cellDataType: "number",
+        columnGroupShow: "open",
+        headerTooltip: "Number of restart cycles during preparation of nodes",
+      },
+      { 
+        field: "resid",
+        columnGroupShow: "open",
+        cellDataType: "text",
+        headerName: "Reservation",
+        headerTooltip: "Reservation used by the job",
+      },
+    ]
+  }
+
+# Array properties are grouped safely
+- {
+    headerName: "Array",
+    groupId: "Array",
+    children: [
+      { 
+        field: "ArrayJobId",
+        headerName: "ArrayJobID",
+        valueGetter: "(params) => (params.data && params.data.ArrayJobId) ? parseInt(params.data.ArrayJobId, 10) : null",
+        cellDataType: "number",
+        headerTooltip: "Array job ID (Slurm)",
+      },
+      { 
+        field: "ArrayTaskId",
+        headerName: "ArrayTaskID",
+        cellDataType: "text",
+        headerTooltip: "Array task ID (Slurm)",
+      },
+    ]
+  }
+# Dependency Chains properties are grouped safely
+- {
+    headerName: "Chain",
+    groupId: "Chain",
+    children: [
+      {
+        field: "dependency",
+        headerName: "Dependency",
+        headerTooltip: "Slurm job dependency",
+        cellDataType: "text",
+        cellClass: "text-left",
+        columnGroupShow: "open",
+      },
+      {
+        field: "chainid",
+        headerName: "ChainID",
+        headerTooltip: "ID of the job chain, computed from dependency information",
+        cellDataType: "text",
+        columnGroupShow: "open",
+      },
+    ]
+  }

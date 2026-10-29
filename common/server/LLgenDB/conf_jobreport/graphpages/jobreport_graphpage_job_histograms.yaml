@@ -1,0 +1,136 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+############
+# Histogram Page
+############
+- graphpage:
+    name:          "job_histograms"
+    filepath:      "$outputdir/ll/graphpage_job_histograms.json"
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_graphpages
+    columns: 3 
+    sync_graphs:   false
+    graphs: 
+    # ----------------------------------------------------
+    # GRAPH 1: Runtime Histogram
+    # ----------------------------------------------------
+    - name: "runtime_histogram"
+      height: "400px"
+      fillNA: 0
+      layout:
+        yaxis: 
+          title: "Frequency (Number of Jobs)"
+          showspikes: false
+        xaxis:
+          title: "Runtime (Seconds)"
+          showspikes: false
+        hovermode: "closest"
+        showlegend: false
+        title:
+          text: "<b>Runtime Distribution<b>"
+          font: 
+            family: 'Arial'
+            size: 16
+          xref: "paper"
+          x: 0.5
+          xanchor: "center"
+      traces:
+      - name: "Runtime"
+        # We explicitly map the variable we want to bin to 'x'
+        xcol: "runtime"
+        yaxis: "y"
+        color: "#B00000"
+        datapath: "data/support/all.csv"
+        csv_delimiter: ';'
+        # The Plotly histogram mode automatically bins the data
+        type: 'histogram'
+        visible: true
+        marker:
+          opacity: 0.7
+          line:
+            width: 1
+            color: 'black'
+
+    # ----------------------------------------------------
+    # GRAPH 2: Job Size (#Nodes) Histogram
+    # ----------------------------------------------------
+    - name: "job_size_histogram"
+      height: "400px"
+      fillNA: 0
+      layout:
+        yaxis: 
+          title: "Frequency (Number of Jobs)"
+          showspikes: false
+        xaxis:
+          title: "Job Size (#Nodes)"
+          showspikes: false
+        hovermode: "closest"
+        showlegend: false
+        title:
+          text: "<b>Job Size Distribution<b>"
+          font: 
+            family: 'Arial'
+            size: 16
+          xref: "paper"
+          x: 0.5
+          xanchor: "center"
+      traces:
+      - name: "#Nodes"
+        xcol: "numnodes"
+        yaxis: "y"
+        color: "#0000B0"
+        datapath: "data/support/all.csv"
+        csv_delimiter: ';'
+        type: 'histogram'
+        visible: true
+        marker:
+          opacity: 0.7
+          line:
+            width: 1
+            color: 'black'
+
+    # ----------------------------------------------------
+    # GRAPH 3: Node-h Histogram
+    # ----------------------------------------------------
+    - name: "nodeh_histogram"
+      height: "400px"
+      fillNA: 0
+      layout:
+        yaxis: 
+          title: "Frequency (Number of Jobs)"
+          showspikes: false
+        xaxis:
+          title: "Node-h"
+          showspikes: false
+        hovermode: "closest"
+        showlegend: false
+        title:
+          text: "<b>Node-h Distribution<b>"
+          font: 
+            family: 'Arial'
+            size: 16
+          xref: "paper"
+          x: 0.5
+          xanchor: "center"
+      traces:
+      - name: "Node-h"
+        xcol: "nodeh"
+        yaxis: "y"
+        color: "#00B000"
+        datapath: "data/support/all.csv"
+        csv_delimiter: ';'
+        type: 'histogram'
+        visible: true
+        marker:
+          opacity: 0.7
+          line:
+            width: 1
+            color: 'black'

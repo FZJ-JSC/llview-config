@@ -1,0 +1,1605 @@
+# Copyright (c) 2023 Forschungszentrum Juelich GmbH.
+# This file is part of LLview. 
+#
+# This is an open source software distributed under the GPLv3 license. More information see the LICENSE file at the top level.
+#
+# Contributions must follow the Contributor License Agreement. More information see the CONTRIBUTING.md file at the top level.
+#
+# Contributors:
+#    Wolfgang Frings (Forschungszentrum Juelich GmbH) 
+#    Filipe Guimarães (Forschungszentrum Juelich GmbH) 
+
+###############################
+# JOBLISTs
+###############################
+- dataset:
+    name: template_joblist
+    set:           template
+    filepath:      '$outputdir/LLtemplates/joblist.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      %include "./jobreport_datafiles_table_templates_joblist_columns.yaml"
+
+- dataset:
+    name: template_datatable
+    set:           template
+    filepath:      '$outputdir/LLtemplates/datatable.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'datatable'
+    ag-grid-theme: 'balham' #quartz, balham, material, alpine (with -dark or -auto-dark suffix too)
+    columns:
+      %include "./jobreport_datafiles_datatable_templates_joblist_columns.yaml"
+
+- dataset:
+    name: template_joblist_history
+    set:           template
+    filepath:      '$outputdir/LLtemplates/joblist_history.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    pretable:      '<div id="day_selection_scroll">
+                     <div id="day_selection">
+                     </div>
+                    </div>'
+    columns:
+      # other
+      - { name: lastts, sort: "N",  group: "info", title: "ended", format: "text-right", 
+                   desc: "Time since end/last update of job"  }
+      %include "./jobreport_datafiles_table_templates_joblist_columns.yaml"
+
+- dataset:
+    name: template_mentorlist
+    set:           template
+    filepath:      '$outputdir/LLtemplates/mentorlist.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: wsaccount,           title: "mentor",     sort: "S", data_pre: "mentor_link",
+          desc: "Name of the mentor"                                                                 }
+      - { name: cnt,                 title: "#projects",  sort: "N",   desc: "Number of projects handled by the mentor" }
+      - { name: projects,            title: "projects",   sort: "S", format: "text-left",
+          desc: "Projects handled by the mentor"           }
+
+
+# - dataset:
+#     name: template_queuedjoblist
+#     set:           template
+#     filepath:      '$outputdir/LLtemplates/queuedjobslist.handlebars'
+#     stat_database: jobreport_json_stat
+#     stat_table:    datasetstat_templates
+#     format:        'template'
+#     columns:
+#       - { name: jobid,           group: "queued", title: "JobID" , desc: "Slurm JobID"  }
+#       # Job general info
+#       - { name: owner,           group: "queued", sort: "S", title: "Owner", data_pre: "gen_project_user_link '/data/ll/user' account",
+#           desc: "User owner of the job",     format: "text-left" }
+#       - { name: account,         group: "queued", sort: "S", title: "Project", data_pre: "gen_project_link '/data/ll/project'",
+#           desc: "Budget used for job submission" ,       format: "text-left"}
+#       - { name: mentor,          group: "queued", sort: "S", title: "Mentor", data_pre: "gen_mentor_link '/data/ll/mentor'",
+#           desc: "Mentor of the project" ,       format: "text-left"}
+#       - { name: queue,           group: "queued", sort: "S", title: "Queue",        desc: "Slurm partition" }
+#       - { name: numnodes,        group: "queued", sort: "N", title: "#Nodes",       desc: "Number of nodes used by the job"  }
+#       - { name: state,           group: "queued", sort: "S", title: "State",        desc: "State of the Job"  }
+#       - { name: wall,            group: "queued", sort: "N", title: "Walltime",     desc: "Requested walltime"  }
+#       - { name: queuedate,       group: "queued", sort: "D", title: "Queue Date",   desc: "Date job was enqueued"  }
+#       - { name: runtime,         group: "queued", sort: "N", title: "Runtime",      desc: "Overall runtime"  }
+#       - { name: starttime,       group: "queued", sort: "D", title: "Start Date (est)",  desc: "Start date (or estimate) of the job"  }
+#       - { name: endtime,         group: "queued", sort: "D", title: "End Date (est)", desc: "End date (or estimate) of the job"  }
+#       - { name: ArrayJobId,      group: "queued", sort: "N", title: "ArrayJobID",   desc: "Array jobID (Slurm)"  }
+#       - { name: ArrayTaskId,     group: "queued", sort: "N", title: "ArrayTaskID",  desc: "Array taskID (Slurm)"  }
+#       - { name: resid,           group: "queued", sort: "S", title: "Reservation",  format: "text-left", desc: "Reservation used by the job"  }
+
+# - dataset:
+#     name: template_queueddetails
+#     set:           template
+#     filepath:      '$outputdir/LLtemplates/queueddetails.handlebars'
+#     stat_database: jobreport_json_stat
+#     stat_table:    datasetstat_templates
+#     format:        'template'
+#     columns:
+#       - { name: userprio,        group: "queued", title: "Priority", desc: "Job priority"    }
+#       - { name: jobid,           group: "queued", title: "JobID", desc: "Slurm JobID"    }
+#       - { name: owner,           group: "queued", sort: "S", title: "Owner", data_pre: "gen_project_user_link '/data/ll/user' account",
+#           desc: "User owner of the job",     format: "text-left" }
+#       - { name: account,         group: "queued", sort: "S", title: "Project", data_pre: "gen_project_link '/data/ll/project'",
+#           desc: "Budget used for job submission" , format: "text-left"}
+#       - { name: mentor,          group: "queued", sort: "S", title: "Mentor", data_pre: "gen_mentor_link '/data/ll/mentor'",
+#           desc: "Mentor of the project" , format: "text-left"}
+#       - { name: queue,           group: "queued", sort: "S", title: "Queue",  desc: "Slurm partition" }
+      
+#       - { name: numnodes,        group: "queued", sort: "N", title: "#Nodes",    desc: "Number of nodes used by the job"  }
+#       - { name: state,           group: "queued", sort: "S", title: "State",  desc: "State of the Job"  }
+#       - { name: qos,             group: "queued", sort: "N", title: "QOS",     desc: "Quality of Service (normal, lowcont, nocont)"  }
+#       - { name: wall,            group: "queued", sort: "N", title: "Walltime",   desc: "Requested walltime"  }
+#       - { name: restart,         group: "queued", sort: "N", title: "Restart", desc: "Number of restart cycles during preparation of nodes"  }
+      
+#       - { name: posinqueue,      group: "queued", sort: "N", title: "Position",  desc: "Current position of job in queue"  }
+#       - { name: waittime,        group: "queued", sort: "N", title: "Wait Time",   desc: "Time since job was enqueued"  }
+#       - { name: queuedate,       group: "queued", sort: "D", title: "Queue Date",   desc: "Date job was enqueued"  }
+#       - { name: timetostart,     group: "queued", sort: "N", title: "Time to Start", desc: "Estimated waiting time until job starts"  }
+#       - { name: runtime,         group: "queued", sort: "N", title: "Runtime",     desc: "Overall runtime"  }
+      
+#       - { name: starttime,       group: "queued", sort: "D", title: "Start Date (est)", desc: "Start date (or estimate) of the job"  }
+#       - { name: endtime,         group: "queued", sort: "D", title: "End Date (est)", desc: "End date (or estimate) of the job"   }
+#       - { name: reason,          group: "queued", sort: "S", title: "Reason",       format: "text-left",  desc: "Reason job could not be scheduled yet"  }
+#       - { name: dependency,      group: "queued", sort: "S", title: "Dependency",   format: "text-left",  desc: "Slurm job dependency"  }
+#       - { name: chainid,         group: "queued", sort: "S", title: "ChainID",      desc: "ID of the job chain, computed from dependency information"  }
+
+#       - { name: ArrayJobId,      group: "queued", sort: "N", title: "ArrayJobID",  desc: "Array job ID (Slurm)"  }
+#       - { name: ArrayTaskId,     group: "queued", sort: "N", title: "ArrayTaskID",  desc: "Array task ID (Slurm)"  }
+
+#       - { name: resid,           group: "queued", sort: "S", title: "Reservation",  format: "text-left", desc: "Reservation used by the job"  }
+
+- dataset:
+    name: template_queuedjoblist
+    set: template
+    filepath: '$outputdir/LLtemplates/queuedjobslist.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      # The primary identifier is pinned for continuous visibility while scrolling
+      - {
+          field: "jobid",
+          headerName: "JobID",
+          headerTooltip: "Slurm JobID",
+          cellDataType: "number",
+          valueGetter: "(params) => params.data ? parseInt(params.data.jobid, 10) : null",
+          pinned: "left",
+          minWidth: 75,
+          maxWidth: 90,
+        }
+
+      # General job properties are grouped for a clean default view
+      - {
+          headerName: "General Info",
+          groupId: "Info",
+          children: [
+            {
+              field: "owner",
+              headerName: "Owner", 
+              headerTooltip: "User owner of the job",
+              cellDataType: "text",
+              cellRenderer: "(params) => gen_project_user_link(params,'/data/ll/user','account')",
+              cellClass: "text-left",
+            },
+            {
+              field: "account",
+              headerName: "Project",
+              headerTooltip: "Budget used for job submission",
+              cellDataType: "text", 
+              cellRenderer: "(params) => gen_project_link(params,'/data/ll/project')",
+              cellClass: "text-left",
+            },
+            {
+              field: "queue",
+              headerName: "Queue",
+              cellDataType: "text",
+              headerTooltip: "Slurm partition",
+            },
+          ]
+        }
+
+      # Mentor is kept as a standalone column matching the main job table design
+      - { 
+          field: "mentor",
+          cellDataType: "text", 
+          headerName: "Mentor", 
+          cellRenderer: "(params) => gen_mentor_link(params,'/data/ll/mentor')",
+          headerTooltip: "Mentor of the project",
+          cellClass: "text-left",
+        }
+
+      # Scheduling and timing metrics leverage custom date and time interval data types
+      - {
+          headerName: "Scheduler",
+          groupId: "Scheduler",
+          children: [
+            { 
+              field: "state",
+              headerName: "State",
+              cellDataType: "text",
+              headerTooltip: "State of the Job",
+            },
+            { 
+              field: "queuedate",
+              cellDataType: "dateString",
+              headerName: "Queue Date",
+              headerTooltip: "Date when the job was queued",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+            },
+            { 
+              field: "starttime",
+              cellDataType: "dateString",
+              headerName: "Start Date (est)",
+              headerTooltip: "Start date (or estimate) of the job",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+            },
+            { 
+              field: "endtime",
+              columnGroupShow: "open",
+              cellDataType: "dateString",
+              headerName: "End Date (est)",
+              headerTooltip: "End date (or estimate) of the job",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+            },
+            { 
+              field: "wall",
+              columnGroupShow: "open",
+              headerName: "Walltime",
+              headerTooltip: "Requested walltime",
+              cellDataType: "timeInterval",
+              filter: "TimeIntervalParentFilter",
+              floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+            },
+            { 
+              field: "runtime",
+              columnGroupShow: "open",
+              headerName: "Runtime",
+              headerTooltip: "Overall runtime",
+              cellDataType: "timeInterval",
+              filter: "TimeIntervalParentFilter",
+              floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+            },
+            { 
+              field: "numnodes",
+              cellDataType: "number",
+              headerName: "#Nodes",
+              headerTooltip: "Number of nodes used by the job",
+            },
+            { 
+              field: "resid",
+              columnGroupShow: "open",
+              cellDataType: "text",
+              headerName: "Reservation",
+              cellClass: "text-left",
+              headerTooltip: "Reservation used by the job",
+            },
+          ]
+        }
+
+      # Array properties are grouped and hidden by default to save horizontal space
+      - {
+          headerName: "Array",
+          groupId: "Array",
+          children: [
+            { 
+              field: "ArrayJobId",
+              headerName: "ArrayJobID",
+              valueGetter: "(params) => (params.data && params.data.ArrayJobId) ? parseInt(params.data.ArrayJobId, 10) : null",
+              cellDataType: "number",
+              headerTooltip: "Array job ID (Slurm)",
+            },
+            { 
+              field: "ArrayTaskId",
+              headerName: "ArrayTaskID",
+              cellDataType: "text",
+              headerTooltip: "Array task ID (Slurm)",
+            },
+          ]
+        }
+
+- dataset:
+    name: template_queueddetails
+    set: template
+    filepath: '$outputdir/LLtemplates/queueddetails.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      %include "./jobreport_datafiles_datatable_templates_queued_columns.yaml"
+
+
+# - dataset:
+#     name: template_workflows
+#     set:           template
+#     filepath:      '$outputdir/LLtemplates/workflows.handlebars'
+#     stat_database: jobreport_json_stat
+#     stat_table:    datasetstat_templates
+#     format:        'template'
+#     columns:
+#       %include "./jobreport_datafiles_table_templates_workflow_columns.yaml"
+
+- dataset:
+    name: template_workflows
+    set: template
+    filepath: '$outputdir/LLtemplates/workflows.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      # The primary identifier is pinned to the left for persistent visibility
+      - {
+          field: "wf_id",
+          headerName: "WorkflowID",
+          headerTooltip: "Unique ID of the workflow",
+          valueGetter: "(params) => params.data ? parseInt(params.data.wf_id, 10) : null",
+          cellDataType: "number",
+          filter: "agNumberColumnFilter",
+          pinned: "left",
+          minWidth: 90,
+          maxWidth: 100,
+        }
+      # General ownership and typing metadata are grouped
+      - {
+          headerName: "General Info",
+          groupId: "Info",
+          children: [
+            {
+              field: "wf_type",
+              headerName: "Type",
+              headerTooltip: "Type of workflow",
+              cellDataType: "text",
+              minWidth: 90,
+              maxWidth: 100,
+              flex: 1, 
+            },
+            {
+              field: "owner",
+              headerName: "Owner",
+              headerTooltip: "User owner of the workflow",
+              cellDataType: "text",
+              cellRenderer: "(params) => gen_project_user_link(params,'/data/ll/user','account')",
+              minWidth: 100,
+              flex: 1, 
+            },
+            {
+              field: "account",
+              headerName: "Project",
+              headerTooltip: "Budget used for job submission",
+              cellDataType: "text",
+              cellRenderer: "(params) => gen_project_link(params,'/data/ll/project')",
+              minWidth: 100,
+              flex: 1, 
+            },
+          ]
+        }
+
+      # The mentor field sits as a standalone column matching the main jobs table structure
+      - {
+          field: "mentor",
+          headerName: "Mentor",
+          headerTooltip: "Mentor of the project",
+          cellDataType: "text",
+          cellRenderer: "(params) => gen_mentor_link(params,'/data/ll/mentor')",
+          minWidth: 100,
+          flex: 1,
+        }
+
+      # Scheduling and timing metrics utilize the custom date string engine
+      - {
+          headerName: "Scheduler",
+          groupId: "Scheduler",
+          children: [
+            {
+              field: "firstts",
+              headerName: "Start Date",
+              headerTooltip: "Start date of first job in workflow",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 140,
+              flex: 1, 
+            },
+            {
+              field: "lastts",
+              headerName: "Last Update",
+              headerTooltip: "Date of last update from scheduler or end time of last job of workflow",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 140,
+              flex: 1, 
+            },
+            {
+              field: "numnodes_avg",
+              headerName: "#Nodes",
+              headerTooltip: "Average number of nodes used by the jobs in the workflow",
+              cellDataType: "number",
+              maxWidth: 90,
+              flex: 1, 
+            },
+          ]
+        }
+
+      # System utilization metrics are grouped and formatted
+      - {
+          headerName: "Load/Memory",
+          groupId: "Load/Memory",
+          children: [
+            {
+              field: "load_avg",
+              headerName: "CPU Load",
+              headerTooltip: "CPU load, 1-min average among all jobs, nodes and over time",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number(params)",
+              maxWidth: 110,
+              flex: 1, 
+            },
+          ]
+        }
+
+      # The list of jobs requires text wrapping to prevent hiding workflow execution history
+      - {
+          field: "jobid_list",
+          headerName: "JobID List",
+          headerTooltip: "Jobs in the workflow (States: [P->Pending] [R->Running] [C->Complete] [F->Failed])",
+          cellDataType: "text",
+          cellRenderer: "(params) => gen_jobid_list_link(params)",
+          wrapText: true, 
+          autoHeight: true,
+          flex: 4, 
+          minWidth: 250,
+        }
+
+
+
+# - dataset:
+#     name: template_reservationlist
+#     set:           template
+#     filepath:      '$outputdir/LLtemplates/reservationlist.handlebars'
+#     stat_database: jobreport_json_stat
+#     stat_table:    datasetstat_templates
+#     format:        'template'
+#     columns:
+#       - { name: resid,    group: "res", title: "ReservationID", sort: "S", format: "text-left", 
+#           desc: "ID of reservation"                                                                 }
+#       - { name: resname,  group: "res", title: "Name",  sort: "S", format: "text-left",
+#           desc: "Name of the reservation"                                                               }
+#       - { name: startts,  group: "res", title: "Start Date", sort: "D", format: "text-left",
+#           desc: "Start date of reservation"                                                         }
+#       - { name: endts,    group: "res", title: "End Date", sort: "D", format: "text-left",
+#           desc: "End date of the reservation"                                                           }
+#       - { name: wall,     group: "res", title: "Walltime", sort: "N", format: "text-left",
+#           desc: "WallTime of reservation"                                                           }
+#       - { name: state,    group: "res", title: "State", sort: "S", format: "text-left",
+#           desc: "State of the reservation"                                                           }
+#       - { name: numnodes,    group: "res", title: "#Nodes", sort: "N", format: "text-left",
+#           desc: "Number of nodes in the reservation"                                                           }
+#       - { name: numcores,    group: "res", title: "#Cores", sort: "N", format: "text-left",
+#           desc: "Number of cores in the reservation"                                                           }
+#       - { name: flags,    group: "res", title: "Flags", sort: "S", format: "text-left",
+#           desc: "Flags used in the reservation"                                                           }
+#       - { name: nodelist, group: "res_nodes", title: "Node List", sort: "S", format: "text-left",
+#           desc: "Nodes covered by the reservation"                                                           }
+#       - { name: accounts, group: "res_accounts", title: "Accounts", sort: "S", format: "text-left",
+#           desc: "Accounts allowed to submit jobs to the reservation"                                                           }
+
+- dataset:
+    name: template_reservationlist
+    set: template
+    filepath: '$outputdir/LLtemplates/reservationlist.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      - {
+            field: "resname",
+            headerName: "Reservation Name",
+            headerTooltip: "Name of the reservation",
+            cellDataType: "text",
+            cellClass: "text-left",
+            flex: 2,
+            pinned: 'left'
+        }
+      - {
+          headerName: "General Info",
+          groupId: "Info",
+          children: [
+            {
+              field: "state",
+              headerName: "State",
+              headerTooltip: "State of the reservation",
+              cellDataType: "text",
+              cellClass: "text-left",
+              minWidth: 90,
+            },
+            {
+              field: "flags",
+              headerName: "Flags",
+              headerTooltip: "Flags used in the reservation",
+              cellDataType: "text",
+              cellClass: "text-left",
+              minWidth: 100,
+            },
+          ]
+        }
+      - {
+          headerName: "Scheduler",
+          groupId: "Scheduler",
+          children: [
+            {
+              field: "startts",
+              headerName: "Start Date",
+              headerTooltip: "Start date of reservation",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 140,
+            },
+            {
+              field: "endts",
+              headerName: "End Date",
+              headerTooltip: "End date of the reservation",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 140,
+            },
+            {
+              field: "wall",
+              headerName: "Walltime",
+              headerTooltip: "Walltime of reservation",
+              cellDataType: "text",
+              minWidth: 100,
+            },
+          ]
+        }
+      - {
+          headerName: "Resources",
+          groupId: "Resources",
+          children: [
+            {
+              field: "numnodes",
+              headerName: "#Nodes",
+              headerTooltip: "Number of nodes in the reservation",
+              cellDataType: "number",
+              minWidth: 90,
+            },
+            {
+              field: "numcores",
+              headerName: "#Cores",
+              headerTooltip: "Number of cores in the reservation",
+              cellDataType: "number",
+              minWidth: 90,
+            },
+          ]
+        }
+      - {
+          field: "nodelist",
+          headerName: "Node List",
+          headerTooltip: "Nodes covered by the reservation",
+          cellDataType: "text",
+          cellClass: "text-left",
+          wrapText: true,
+          autoHeight: true,
+          flex: 2,
+          minWidth: 200,
+        }
+      - {
+          field: "accounts",
+          headerName: "Accounts",
+          headerTooltip: "Accounts allowed to submit jobs to the reservation",
+          cellDataType: "text",
+          cellClass: "text-left",
+          wrapText: true,
+          autoHeight: true,
+          flex: 2,
+          minWidth: 150,
+        }
+
+- dataset:
+    name: template_nodereasons
+    set: template
+    filepath: '$outputdir/LLtemplates/nodereasons.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      - {
+          field: "nodeid",
+          headerName: "Node ID",
+          headerTooltip: "Identifier of the node",
+          cellDataType: "text",
+          pinned: "left",
+          minWidth: 100,
+          maxWidth: 180,
+        }
+      - {
+          headerName: "State Info",
+          groupId: "State",
+          children: [
+            {
+              field: "status",
+              headerName: "Event Status",
+              headerTooltip: "Event tracking status (ACTIVE or RESOLVED)",
+              cellDataType: "text",
+              minWidth: 130,
+              maxWidth: 150,
+            },
+            {
+              field: "currentstate",
+              headerName: "Slurm State",
+              headerTooltip: "Current or last known Slurm state of the node",
+              cellDataType: "text",
+              minWidth: 110,
+              maxWidth: 150,
+            }
+          ]
+        }
+      - {
+          headerName: "Event Timeline",
+          groupId: "Timeline",
+          children: [
+            {
+              field: "down_date",
+              headerName: "Down Date",
+              headerTooltip: "Date and time the node went offline",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 160,
+              maxWidth: 200,
+            },
+            {
+              field: "resolved_date",
+              headerName: "Resolved Date",
+              headerTooltip: "Date and time the node issue was resolved",
+              cellDataType: "dateString",
+              filter: "DateTimeParentFilter",
+              floatingFilterComponent: "DateFloatingFilterComponent",
+              minWidth: 160,
+              maxWidth: 200,
+            }
+          ]
+        }        
+      - {
+          field: "reason",
+          headerName: "Reason",
+          headerTooltip: "Reason for the node outage",
+          cellDataType: "text",
+          cellClass: "text-left",
+          wrapText: true,
+          autoHeight: true,
+          flex: 3,
+          minWidth: 300,
+        }
+
+
+- dataset:
+    name: template_sysstat
+    set:           template
+    filepath:      '$outputdir/LLtemplates/sysstat.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: feat,            group: "sysstat",  sort: "S", title: "Feature",   desc: "Line contains statitics about nodes which have this feature"      }
+      - { name: status,          group: "sysstat",  sort: "S", title: "Status",    desc: "Status of nodes: R: Running, Id: Idle, Pl: Planned, Po: Powered Down, Do: Down, Un: Unknown" }
+      - { name: substatus,       group: "sysstat",  sort: "S", title: "Substatus", desc: "Detailed status of nodes: Do: Down, Co: Completed, Dr: Drained, <br> Ma: Maintenance, Re: Reserved or Responding, NotRes: Not_Responding, Id: Idle, Pl: Planned, Al: Allocated, PowUp: Powering Up, PowDo: Powered Down" }
+      - { name: count,           group: "sysstat",  sort: "N", title: "#Nodes",    desc: "Number of nodes covered by the statistics"  }
+
+      - { name: used_cores_min,        group: "sysstat_minmax",  sort: "N", title: "Min. Used Cores", data_format: "round_number", format: "text-right",
+          desc: "Minimum used cores per node"  }
+      - { name: used_cores_avg,        group: "sysstat",         sort: "N", title: "Avg. Used Cores", data_format: "round_number", format: "text-right",
+          desc: "Average used cores per node"  }
+      - { name: used_cores_max,        group: "sysstat_minmax",  sort: "N", title: "Max. Used Cores", data_format: "round_number", format: "text-right",
+          desc: "Maximum used cores per node"  }
+
+      - { name: load_min,        group: "sysstat_minmax",  sort: "N", title: "Min. Load", data_format: "round_number", format: "text-right",
+          desc: "Minimum CPU load, 1-min average among all job nodes and over time"  }
+      - { name: load_avg,        group: "sysstat",         sort: "N", title: "Avg. Load", data_format: "round_number", format: "text-right",
+          desc: "Average CPU load, 1-min average among all job nodes and over time"  }
+      - { name: load_max,        group: "sysstat_minmax",  sort: "N", title: "Max. Load", data_format: "round_number", format: "text-right",
+          desc: "Maximum CPU load, 1-min average among all job nodes and over time"  }
+
+      - { name: used_mem_min,        group: "sysstat_minmax",  sort: "N", title: "Min. Used Memory", data_format: "round_number", format: "text-right",
+          desc: "Minimum used memory per node"  }
+      - { name: used_mem_avg,        group: "sysstat",         sort: "N", title: "Avg. Used Memory", data_format: "round_number", format: "text-right",
+          desc: "Average used memory per node"  }
+      - { name: used_mem_max,        group: "sysstat_minmax",  sort: "N", title: "Max. Used Memory", data_format: "round_number", format: "text-right",
+          desc: "Maximum used memory per node"  }
+          
+      - { name: total_cores_avg, group: "sysstat",         sort: "N", title: "Avg. #Cores", data_format: "round_number", format: "text-right",
+          desc: "Average number of cores per node"  }
+      - { name: total_mem_avg,   group: "sysstat",         sort: "N", title: "Avg. Memory",      data_format: "round_number", format: "text-right",
+          desc: "Average total memory per node"  }
+      - { name: ts,              group: "sysstat_add",     sort: "D", title: "Last Update"    }
+
+- dataset:
+    name: template_sysenvstat
+    set:           template
+    filepath:      '$outputdir/LLtemplates/sysenvstat.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: sysname,         group: "sysstat",  sort: "S", title: "System-Name",  desc: "System Name"      }
+      - { name: power,           group: "sysstat",  sort: "N", title: "Total Power Usage",    desc: "Total Power Usage (in kW)" }
+      - { name: water_flowrate,  group: "sysstat",  sort: "N", title: "Water_Flowrate", desc: "Water Flow Rate (in m3/hour)" }
+      - { name: water_inlet_temp,  group: "sysstat",  sort: "N", title: "Water_Inlet_Temp", desc: "Water Inlet Temperature (in C)" }
+      - { name: water_outlet_temp, group: "sysstat",  sort: "N", title: "Water_Outlet_Temp", desc: "Water Outlet Temperature (in C)" }
+      - { name: water_power,       group: "sysstat",  sort: "N", title: "Water_Cooling_Power", desc: "Water Cooling Power (in kW)" }
+      - { name: ts,              group: "sysstat",  sort: "D", title: "Last Update"    }
+
+- dataset:
+    name: template_sysrackpwr
+    set:           template
+    filepath:      '$outputdir/LLtemplates/sysrackpwr.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: rackid,          group: "sysstat",  sort: "N", title: "Rack Name",  desc: "Name of the Rack"      }
+      - { name: power_last,      group: "sysstat",  sort: "N", title: "Power Usage (last update)", desc: "last update of power used by the rack (in kW)", data_format: "round_number" }
+      - { name: power_avg,       group: "sysstat",  sort: "N", title: "Power Usage Average (25h)", desc: " Average of last 25h of power used by the rack (in kW)", data_format: "round_number" }
+      - { name: power_min,       group: "sysstat",  sort: "N", title: "Power Usage Min (25h)", desc: "Minimum in last 25h of power used by the rack (in kW)", data_format: "round_number" }
+      - { name: power_max,       group: "sysstat",  sort: "N", title: "Power Usage Max (25h)", desc: "Maximum in last 25h of power used by the rack (in kW)", data_format: "round_number" }
+      - { name: cnt,             group: "sysstat",  sort: "N", title: "# samples",  desc: "# samples (1-min probes)"      }
+      - { name: ts,              group: "sysstat",  sort: "D", title: "Last Update"    }
+
+- dataset:
+    name: template_nodeerr
+    set: template
+    filepath: '$outputdir/LLtemplates/nodeerr.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      # Critical identifiers are kept strictly visible at the top level
+      - { 
+          field: "nodeerrts",
+          headerName: "Date",
+          headerTooltip: "Date error was issued",
+          cellDataType: "dateString",
+          filter: "DateTimeParentFilter",
+          floatingFilterComponent: "DateFloatingFilterComponent",
+          maxWidth: 140,
+        }
+      - { 
+          field: "nodeid",
+          headerName: "Node",
+          headerTooltip: "Node where error was issued",
+          cellDataType: "text",
+          maxWidth: 100,
+        }
+      - { 
+          field: "jobid",
+          headerName: "JobID",
+          headerTooltip: "JobID",
+          cellDataType: "text",
+          cellRenderer: "(params) => gen_search_jobid_link(params)",
+          maxWidth: 100,
+        }
+      
+      # Process context details are grouped for a clean default view
+      - {
+          headerName: "Process Info",
+          groupId: "ProcInfo",
+          children: [
+            { 
+              field: "cmd",
+              headerName: "Command",
+              headerTooltip: "Command that issued error",
+              cellDataType: "text",
+              maxWidth: 120,
+            },
+            { 
+              field: "pid",
+              headerName: "PID",
+              headerTooltip: "ProcessID that issued error",
+              cellDataType: "number",
+              maxWidth: 90,
+            },
+            { 
+              field: "user",
+              headerName: "User",
+              headerTooltip: "User",
+              cellDataType: "text",
+              maxWidth: 100,
+            },
+          ]
+        }
+      # Extended metadata is grouped and hidden by default to keep the main table clean
+      - {
+          headerName: "Extended Info",
+          groupId: "ExtInfo",
+          children: [
+            { 
+              field: "msgcls",
+              headerName: "Message Class",
+              headerTooltip: "Error Message Class",
+              cellDataType: "number",
+              columnGroupShow: "closed",
+              minWidth: 130,
+            },
+            { 
+              field: "uid",
+              headerName: "UID",
+              headerTooltip: "UserID",
+              cellDataType: "number",
+              columnGroupShow: "closed",
+              maxWidth: 70,
+            },
+            { 
+              field: "gid",
+              headerName: "GID",
+              headerTooltip: "GroupID",
+              cellDataType: "number",
+              columnGroupShow: "closed",
+              maxWidth: 70,
+            },
+          ]
+        }
+      # The actual error message is given high flex and wrapText to gracefully handle long logs
+      - { 
+          field: "msg",
+          headerName: "Message",
+          headerTooltip: "Error Message",
+          cellDataType: "text",
+          cellClass: "text-left",
+          wrapText: true,
+          autoHeight: true,
+          flex: 3,
+          minWidth: 400,
+        }
+      
+- dataset:
+    name: template_DBstat
+    set:           template
+    filepath:      '$outputdir/LLtemplates/DBstat.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: ts,              group: "DBstat",  sort: "D", title: "Last Update", desc: "Date of last update on table"   }
+      - { name: ts_min,          group: "DBstat",  sort: "D", title: "Min. Date", desc: "Minimum date of entries"   }
+      - { name: ts_max,          group: "DBstat",  sort: "D", title: "Max. Date", desc: "Maximum date of entries"   }
+      - { name: ts_dur,          group: "DBstat",  sort: "N", title: "Time Span", desc: "Time span between minimum and maximum dates"   }
+      - { name: db,              group: "DBstat",  sort: "S", title: "Database", format: "text-left", desc: "Database name"      }
+      - { name: tab,             group: "DBstat",  sort: "S", title: "Table", format: "text-left", desc: "Table name"      }
+      - { name: tabpath,         group: "DBstat_ext",  sort: "S", title: "Table Path", desc: "Path of the table"      }
+      - { name: nrows,           group: "DBstat",  sort: "N", title: "#Rows", desc: "Number of rows stored in table"      }
+      - { name: time_aggr_res,   group: "DBstat",  sort: "N", title: "TimeRes", desc: "Time resolution if table is using time_aggr, otherwise -1"      }
+
+- dataset:
+    name: template_DBgraph
+    set:           template
+    filepath:      '$outputdir/LLtemplates/DBgraph.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: db,              group: "DBgraph",  sort: "S", title: "Database",  desc: "Database name"      }
+      - { name: ntabs,           group: "DBgraph",  sort: "N", title: "#tables", desc: "Number of tables in this database"      }
+      - { name: nlinks,          group: "DBgraph",  sort: "N", title: "#links", desc: "Number of links between tables in this database"      } 
+      - { name: LMLattr,         group: "DBgraph",  sort: "S", title: "LML import", desc: "List of attributes used by import from LML files"      } 
+      - { name: ts,              group: "DBgraph",  sort: "D", title: "Last Update", desc: "Date of last update on db graph"   }
+
+- dataset:
+    name: template_steptimings
+    set:           template
+    filepath:      '$outputdir/LLtemplates/steptimings.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: wf_startts,      group: "stts",  sort: "D", title: "WF Start Date", desc: "Start date of the workflow"    }
+      - { name: wf_name,         group: "stts",  sort: "S", title: "WF Name",  desc: "Workflow name"      }
+      - { name: wf_cnt,          group: "stts",  sort: "N", title: "WF Counter",   desc: "Workflow counter"      }
+      - { name: name,            group: "stts",  sort: "S", title: "Step Name",     desc: "Step name"      }
+      - { name: startts,         group: "stts",  sort: "D", title: "Step Start Date", desc: "Start date of the step"    }
+      - { name: endts,           group: "stts",  sort: "D", title: "Step End Date", desc: "End date of the workflow"    }
+      - { name: dt,              group: "stts",  sort: "N", title: "Step Duration", desc: "Duration of step"      }
+      - { name: cmplx,           group: "stts",  sort: "N", title: "Complexity", desc: "Number of operations in step (add/upd/del entries)"      }
+      - { name: dt_min,          group: "stts_stat",  sort: "N", title: "Min. &Delta;t", desc: "Min. duration of step"      }
+      - { name: dt_avg,          group: "stts_stat",  sort: "N", title: "Avg. &Delta;t", desc: "Avg. duration of step"      }
+      - { name: dt_max,          group: "stts_stat",  sort: "N", title: "Max. &Delta;t", desc: "Max. duration of step"      }
+      - { name: cmplx_min,       group: "stts",  sort: "N", title: "Min. Cmplx", desc: "Min. number of operations (add/upd/del entries)"      }
+      - { name: cmplx_avg,       group: "stts",  sort: "N", title: "Avg. Cmplx", desc: "Avg. number of operations (add/upd/del entries)"      }
+      - { name: cmplx_max,       group: "stts",  sort: "N", title: "Max. Cmplx", desc: "Max. number of operations (add/upd/del entries)"      }
+      - { name: ts_min,          group: "stts",  sort: "D", title: "Min. Start Date", desc: "First date of start of step in DB"    }
+      - { name: nr,              group: "stts",  sort: "N", title: "Nr", desc: "Order of execution of step within workflow"      }
+      - { name: groupnr,         group: "stts",  sort: "N", title: "GroupNr", desc: "Parallel execution group number"      }
+
+- dataset:
+    name: template_activeuser
+    set:           template
+    filepath:      '$outputdir/LLtemplates/ActiveUser.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: owner,           group: "user", sort: "S", title: "User", data_pre: "gen_project_user_link '/data/ll/user' account",
+          desc: "Username",         format: "text-left" }
+      - { name: account,         group: "user", sort: "S", title: "Project", data_pre: "gen_project_link '/data/ll/project'",
+          desc: "Budget used for job submission" ,       format: "text-left"}
+      - { name: mentor,          group: "user", sort: "S", title: "Mentor", data_pre: "gen_mentor_link '/data/ll/mentor'",
+          desc: "Mentor of the project" ,       format: "text-left"}
+      - { name: numjobs,         group: "user",  sort: "N", title: "#Jobs (Run)",           desc: "Number of running and finished jobs in the last three weeks"  }
+      - { name: nh,              group: "user",  sort: "N", title: "#Node-hour (Run)",    desc: "Total node-hours of running and finished jobs in the last three weeks", data_format: "round_number" }
+      - { name: numnodes_avg,    group: "user",  sort: "N", title: "Avg. #Nodes (Run)",      desc: "Avg. number of nodes of running and finished jobs in the last three weeks", data_format: "round_number"  }
+      - { name: numqueuedjobs,   group: "user",  sort: "N", title: "#Jobs Queued",        desc: "Number of currently queued jobs"  }
+      - { name: qnh,             group: "user",  sort: "N", title: "#Node-hour (Queued)", desc: "Total node-hours of currently queued jobs", data_format: "round_number"  }
+      - { name: qnumnodes_avg,   group: "user",  sort: "N", title: "Avg #Nodes (Queued)",   desc: "Avg. number of nodes of currently queued jobs", data_format: "round_number"  }
+
+- dataset:
+    name: template_alluser
+    set:           template
+    filepath:      '$outputdir/LLtemplates/AllUser.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: id,              group: "user", sort: "S", title: "User", desc: "Username",   format: "text-left" }
+      - { name: wsaccount,       group: "user", sort: "S", title: "wsaccount",
+          desc: "Web service account of the user",     format: "text-left" }
+      - { name: numjobs,         group: "user",  sort: "N", title: "#Jobs", desc: "Number of queued, running and finished jobs in the last three weeks"  }
+      - { name: numprojects,     group: "user",  sort: "N", title: "#Projects", desc: "Number of projects user belongs to"  }
+      - { name: projects,        group: "user",  sort: "S", format: "text-left", title: "Projects",  desc: "List of projects user belongs to", data_pre: "gen_user_projects_link '/data/ll/user' id" }
+
+- dataset:
+    name: template_allmentor
+    set:           template
+    filepath:      '$outputdir/LLtemplates/AllMentor.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: id,              group: "user", sort: "S", title: "Mentor", desc: "Username of the mentor",   format: "text-left", data_pre: "gen_mentor_link '/data/ll/mentor'" }
+      - { name: wsaccount,       group: "user", sort: "S", title: "wsaccount",
+          desc: "Web service account of the mentor",     format: "text-left" }
+      - { name: numjobs,         group: "user",  sort: "N", title: "#Jobs", desc: "Number of queued, running and finished jobs in the last three weeks"  }
+      - { name: numprojects,     group: "user",  sort: "N", title: "#Projects", desc: "Number of projects user is mentor"  }
+      - { name: projects,        group: "user",  sort: "S", format: "text-left", title: "Projects",  desc: "List of projects user is mentor", data_pre: "gen_projects_link '/data/ll/project'" }
+      
+- dataset:
+    name: template_allPI
+    set:           template
+    filepath:      '$outputdir/LLtemplates/AllPI.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: id,              group: "user", sort: "S", title: "PI", desc: "Username of the PI",   format: "text-left" }
+      - { name: wsaccount,       group: "user", sort: "S", title: "wsaccount",
+          desc: "Web service account of the PI",     format: "text-left" }
+      - { name: numjobs,         group: "user",  sort: "N", title: "#Jobs", desc: "Number of queued, running and finished jobs in the last three weeks"  }
+      - { name: numprojects,     group: "user",  sort: "N", title: "#Projects", desc: "Number of projects user is PI"  }
+      - { name: projects,        group: "user",  sort: "S", format: "text-left", title: "Projects",  desc: "List of projects user is PI", data_pre: "gen_projects_link '/data/ll/project'" }
+
+- dataset:
+    name: template_allPA
+    set:           template
+    filepath:      '$outputdir/LLtemplates/AllPA.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: id,              group: "user", sort: "S", title: "PA", desc: "Username of the PA",   format: "text-left" }
+      - { name: wsaccount,       group: "user", sort: "S", title: "wsaccount",
+          desc: "Web service account of the PA",     format: "text-left" }
+      - { name: numjobs,         group: "user",  sort: "N", title: "#Jobs", desc: "Number of queued, running and finished jobs in the last three weeks"  }
+      - { name: numprojects,     group: "user",  sort: "N", title: "#Projects", desc: "Number of projects user is PA" }
+      - { name: projects,        group: "user",  sort: "S", format: "text-left", title: "Projects",  desc: "List of projects user is PA", data_pre: "gen_projects_link '/data/ll/project'" }
+      
+- dataset:
+    name: template_projectlist
+    set:           template
+    filepath:      '$outputdir/LLtemplates/projectlist.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: account,         group: "project", sort: "S", title: "Project", desc: "Project name",   format: "text-left", data_pre: "gen_project_link '/data/ll/project'" }
+      - { name: ts,              group: "project", sort: "D", title: "Last Update", desc: "Date of last update of projects statistics",     format: "text-left" }
+      - { name: numjobs_sum,     group: "project", sort: "N", title: "#Jobs", desc: "Number of jobs with in the project, accumulated over time and all users in project"  }
+      - { name: numnodes_min,    group: "minmax",  sort: "N", title: "#Nodes (min)", desc: "Minimum number of nodes used in jobs of project" }
+      - { name: numnodes_avg,    group: "project", sort: "N", title: "#Nodes (avg)", data_format: "round_number_or_null", desc: "Average number of nodes used in jobs of project" }
+      - { name: numnodes_max,    group: "minmax",  sort: "N", title: "#Nodes (max)", desc: "Maximum number of nodes used in jobs of project" }
+      - { name: wall_min,        group: "minmax",  sort: "N", title: "Walltime (min)",  desc: "Minimum Requested walltime (h)"  }
+      - { name: wall_avg,        group: "project", sort: "N", title: "Walltime (avg)",  desc: "Average Requested walltime (h)"  }
+      - { name: wall_max,        group: "minmax",  sort: "N", title: "Walltime (max)",  desc: "Maximum Requested walltime (h)"  }
+      - { name: runtime_min,        group: "minmax",  sort: "N", title: "Runtime (min)",  desc: "Minimum run time (h)"  }
+      - { name: runtime_avg,        group: "project", sort: "N", title: "Runtime (avg)",  desc: "Average run time (h)"  }
+      - { name: runtime_max,        group: "minmax",  sort: "N", title: "Runtime (max)",  desc: "Maximum run time (h)"  }
+      - { name: wallusage_min,      group: "minmax",  sort: "N", title: "Wall Usage (min)",  desc: "Minimum wall usage (%)", data_format: "round_number_or_null"  }
+      - { name: wallusage_avg,      group: "project", sort: "N", title: "Wall Usage (avg)",  desc: "Average wall usage (%)", data_format: "round_number_or_null"  }
+      - { name: wallusage_max,      group: "minmax",  sort: "N", title: "Wall Usage (max)",  desc: "Maximum wall usage (%)", data_format: "round_number_or_null"  }
+      - { name: load_min,      group: "minmax",  sort: "N", title: "Load (min)",  desc: "Minimum load", data_format: "round_number_or_null"  }
+      - { name: load_avg,      group: "project", sort: "N", title: "Load (avg)",  desc: "Average load", data_format: "round_number_or_null"  }
+      - { name: load_max,      group: "minmax",  sort: "N", title: "Load (max)",  desc: "Maximum load", data_format: "round_number_or_null"  }
+      - { name: usage_min,      group: "minmax",  sort: "N", title: "Usage (min)",  desc: "Minimum usage", data_format: "round_number_or_null"  }
+      - { name: usage_avg,      group: "project", sort: "N", title: "Usage (avg)",  desc: "Average usage", data_format: "round_number_or_null"  }
+      - { name: usage_max,      group: "minmax",  sort: "N", title: "Usage (max)",  desc: "Maximum usage", data_format: "round_number_or_null"  }
+      - { name: used_cores_min,      group: "minmax",  sort: "N", title: "Used_Cores (min)",  desc: "Minimum used cores", data_format: "round_number_or_null"  }
+      - { name: used_cores_avg,      group: "project", sort: "N", title: "Used_Cores (avg)",  desc: "Average used cores", data_format: "round_number_or_null"  }
+      - { name: used_cores_max,      group: "minmax",  sort: "N", title: "Used_Cores (max)",  desc: "Maximum used cores", data_format: "round_number_or_null"  }
+      - { name: gpu_util_min,      group: "minmax",  sort: "N", title: "GPU Usage (min)",  desc: "Minimum GPU usage", data_format: "round_number_or_null"  }
+      - { name: gpu_util_avg,      group: "project", sort: "N", title: "GPU Usage (avg)",  desc: "Average GPU usage", data_format: "round_number_or_null"  }
+      - { name: gpu_util_max,      group: "minmax",  sort: "N", title: "GPU Usage (max)",  desc: "Maximum GPU usage", data_format: "round_number_or_null"  }
+
+
+- dataset:
+    name: template_corepattern
+    set: template
+    filepath: '$outputdir/LLtemplates/corepattern.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table: datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      - { 
+          field: "pid",
+          headerName: "Pattern ID",
+          headerTooltip: "Unique ID for this pattern",
+          cellDataType: "number",
+          filter: "agNumberColumnFilter",
+          minWidth: 100,
+        }
+      - { 
+          field: "pattern",
+          headerName: "Pattern",
+          headerTooltip: "Pattern of core usage",
+          cellDataType: "text",
+          cellClass: "corepattern",
+          cellRenderer: "(params) => { let span = document.createElement('span'); span.innerHTML = params.value; return span; }",
+          # wrapText: true,
+          # autoHeight: true,
+          flex: 3,
+          width: 1250,
+        }
+
+      - {
+          headerName: "Pattern Stats",
+          groupId: "pattern_stats",
+          children: [
+            { 
+              field: "ncores_used",
+              headerName: "#UsedCores",
+              headerTooltip: "Number of used cores (>25%) in jobs using this pattern",
+              cellDataType: "number",
+              width: 120,
+            },
+            { 
+              field: "gpu",
+              headerName: "GPU Node",
+              headerTooltip: "Flag for GPU nodes (1) or not (0)",
+              cellDataType: "number",
+              width: 120,
+            },
+            { 
+              field: "nodeh",
+              headerName: "Node Hours",
+              headerTooltip: "Total amount of node-hours spent by jobs using this pattern (in the last 3 days)",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number_or_null(params)",
+              width: 120,
+              sort: 'desc',
+            },
+            { 
+              field: "njobs",
+              headerName: "#Jobs",
+              headerTooltip: "Number of jobs using this pattern (in the last 3 days)",
+              cellDataType: "number",
+              width: 120,
+            },
+            { 
+              field: "min_ts",
+              headerName: "MaxAge",
+              headerTooltip: "Hours since first job with this pattern (in the last 3 days)",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number_or_null(params)",
+              width: 120,
+            },
+            { 
+              field: "max_ts",
+              headerName: "MinAge",
+              headerTooltip: "Hours since last job with this pattern",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number_or_null(params)",
+              width: 120,
+            },
+          ]
+        }
+      - { 
+          field: "jobids",
+          headerName: "JobID List",
+          headerTooltip: "Jobs using this pattern (in the last 3 days)",
+          cellDataType: "text",
+          cellClass: "text-left",
+          cellRenderer: "(params) => gen_jobid_list_link(params)",
+          wrapText: true,
+          autoHeight: true,
+          flex: 2,
+          minWidth: 200,
+        }
+
+- dataset:
+    name: template_joblist_source_stat
+    set:           template
+    filepath:      '$outputdir/LLtemplates/joblist_source_stat.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'template'
+    columns:
+      - { name: s_start,      group: "jobliststat", sort: "N", title: "S_start",        data_format: "round_number_or_null_int", desc: "Source job (scontrol) available"      }
+      - { name: s_ts,         group: "jobliststat", sort: "N", title: "S_ts",           data_format: "round_number_or_null_int", desc: "Source ts (last update) available" }
+      - { name: s_defer,      group: "jobliststat", sort: "N", title: "S_defer",        data_format: "round_number_or_null_int", desc: "Source defer (15min intervall) available"}
+      - { name: s_step,       group: "jobliststat", sort: "N", title: "S_step",         data_format: "round_number_or_null_int", desc: "Source step (sacct) available" }
+      - { name: s_err,        group: "jobliststat", sort: "N", title: "S_err",          data_format: "round_number_or_null_int", desc: "Source error counter available" }
+      - { name: s_ld,         group: "jobliststat", sort: "N", title: "S_ld",           data_format: "round_number_or_null_int", desc: "Source loadmem available" }
+      - { name: s_rc,         group: "jobliststat", sort: "N", title: "S_rc",           data_format: "round_number_or_null_int", desc: "Source rc (sacct)"}
+      - { name: s_co,         group: "jobliststat", sort: "N", title: "S_co",           data_format: "round_number_or_null_int", desc: "Source cores available" }
+      - { name: s_fa,         group: "jobliststat", sort: "N", title: "S_fa",           data_format: "round_number_or_null_int", desc: "Source fabric available" }
+      - { name: s_ic,         group: "jobliststat", sort: "N", title: "S_ic",           data_format: "round_number_or_null_int", desc: "Source ICmap available" }
+      - { name: s_fs,         group: "jobliststat", sort: "N", title: "S_fs",           data_format: "round_number_or_null_int", desc: "Source file system available" }
+      - { name: s_gpu,        group: "jobliststat", sort: "N", title: "S_gpu",          data_format: "round_number_or_null_int", desc: "Source GPU available"}
+      - { name: num_jobs,     group: "jobliststat", sort: "N", title: "#jobs",          data_format: "round_number_or_null_int", desc: "number of jobs" }
+      - { name: min_ts_start, group: "jobliststat", sort: "D", title: "min_ts_start",   desc: "min job start time stamp" }
+      - { name: min_ts,       group: "jobliststat", sort: "D", title: "min_ts",         desc: "min update timestamp" }
+      - { name: max_ts_start, group: "jobliststat", sort: "D", title: "max_ts_start",   desc: "max job start time stamp" }
+      - { name: max_ts,       group: "jobliststat", sort: "D", title: "max_ts",         desc: "max update timestamp" }
+      - { name: min_jobid,    group: "jobliststat", sort: "S", title: "min_jobid",      desc: "min jobid"}
+      - { name: max_jobid,    group: "jobliststat", sort: "S", title: "max_jobidN",     desc: "max jobid"}
+      - { name: avg_jwallm,   group: "jobliststat", sort: "N", title: "avg_wall(min)",  data_format: "round_number_or_null", desc: "avg wall time of job" }
+      - { name: max_jwallm,   group: "jobliststat", sort: "N", title: "max_wall(min)",  data_format: "round_number_or_null", desc: "max wall time of job" }
+      
+
+- dataset:
+    name: template_app_stats
+    set:           template
+    filepath:      '$outputdir/LLtemplates/app_stats.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format:        'datatable'
+    ag-grid-theme: 'balham' #quartz, balham, material, alpine (with -dark or -auto-dark suffix too)
+    columns:
+        - { 
+            field: "application", 
+            headerName: "Application", 
+            flex: 1,  
+            headerTooltip: "Application name",
+            cellDataType: "text", 
+        }
+        - { 
+            children: [
+            {
+                field: "run_count", 
+                headerName: "Run Count", 
+                flex: 1,  
+                headerTooltip: "Number of job steps executed for this application", 
+                cellDataType: "number",
+                maxWidth: 150,
+            },
+            { 
+                field: "nodeh",
+                headerName: "Node-h", 
+                flex: 1,  
+                headerTooltip: "Total Node-h for this application", 
+                cellDataType: "number",
+                valueFormatter: "(params) => round_number(params,2)",
+                maxWidth: 150,
+                sort: 'desc', 
+                sortIndex: 0,
+            }], 
+            headerName: "Usage", 
+            groupId: "usage", 
+        }
+        # - { 
+        #     children: [
+        #     { 
+        #         field: "userlist",
+        #         headerName: "Users",
+        #         cellDataType: "text", 
+        #         cellClass: "text-left",
+        #         flex: 1, 
+        #         wrapText: true, 
+        #         autoHeight: true, 
+        #         headerTooltip: "List of users who ran this application", 
+        #         valueFormatter: "(params) => { if (Array.isArray(params.value)) { return params.value.join(', '); } return params.value;}",
+        #     },
+        #     { 
+        #         field: "accountlist",
+        #         headerName: "Accounts",
+        #         cellDataType: "text", 
+        #         cellClass: "text-left",
+        #         flex: 1,
+        #         wrapText: true,
+        #         autoHeight: true,
+        #         headerTooltip: "List of accounts who ran this application", 
+        #         cellRenderer: "(params) => gen_projects_link(params,'/data/ll/project')",
+        #     },
+        #     { 
+        #         field: "joblist",
+        #         headerName: "Jobs",
+        #         cellDataType: "text", 
+        #         cellClass: "text-left",
+        #         flex: 1,
+        #         wrapText: true,
+        #         autoHeight: true,
+        #         headerTooltip: "List of accounts who ran this application", 
+        #         columnGroupShow: "open",
+        #         cellRenderer: "(params) => gen_jobid_list_link(params)",
+        #     }], 
+        #     headerName: "Lists", 
+        #     groupId: "lists"
+        # }
+
+- dataset:
+    name: template_login_node_overview
+    set: template
+    filepath: '$outputdir/LLtemplates/login_node_overview.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      - {
+          field: "nodeid",
+          headerName: "Login Node",
+          headerTooltip: "Identifier of the login node",
+          cellDataType: "text",
+          cellRenderer: "(params) => gen_tab_link(params,'loginnodes.login_')",
+          pinned: "left",
+          minWidth: 120,
+        }
+      - {
+          field: "address",
+          headerName: "Address",
+          headerTooltip: "Network address of the login node",
+          cellDataType: "text",
+          minWidth: 180,
+        }
+      - {
+            headerName: "Users",
+            groupId: "Users",
+            children: [
+              {
+                field: "logged_in_users",
+                headerName: "Logged In",
+                headerTooltip: "Total number of users with an active session on this node",
+                cellDataType: "number",
+                minWidth: 100,
+              },
+              {
+                field: "users_with_procs",
+                headerName: "With Procs",
+                headerTooltip: "Number of users running at least one process",
+                cellDataType: "number",
+                minWidth: 110,
+              },
+            ]
+          }
+      - {
+          headerName: "CPU",
+          groupId: "CPU",
+          children: [
+            {
+              field: "load_1m",
+              headerName: "Load",
+              headerTooltip: "CPU load average over the last 1 minute.",
+              cellDataType: "number",
+              cellStyle: "(params) => cell_background_color(params,'load_score')",
+              minWidth: 100,
+            },
+            {
+              field: "running_procs",
+              headerName: "Running Processes",
+              headerTooltip: "Number of processes actively running on CPU cores (State 'R')",
+              cellDataType: "number",
+              minWidth: 120,
+            },
+            {
+              field: "total_cores",
+              columnGroupShow: "open",
+              headerName: "Cores",
+              headerTooltip: "Total number of physical CPU cores available on the node",
+              cellDataType: "number",
+              minWidth: 80,
+            },
+          ]
+        }
+      - {
+          headerName: "Process Warnings",
+          groupId: "Warnings",
+          children: [
+            {
+              field: "max_proc_cpu_pct",
+              headerName: "Max CPU %",
+              headerTooltip: "Highest CPU % of a single process. Red indicates >1500% CPU for over 1 hour.",
+              cellDataType: "number",
+              cellStyle: "(params) => cell_background_color(params,'worst_cpu_score')",
+              minWidth: 120,
+            },
+            {
+              field: "max_proc_d_state",
+              headerName: "Max D-State Threads",
+              headerTooltip: "Highest number of D-State threads in a single process. Warning >10, Critical >100.",
+              cellDataType: "number",
+              cellStyle: "(params) => cell_background_color(params,'d_state_score')",
+              minWidth: 160,
+            },
+          ]
+        }
+      - {
+          headerName: "GPU",
+          groupId: "GPU",
+          children: [
+            {
+              field: "gpu_util_pct",
+              headerName: "Utilization (%)",
+              headerTooltip: "GPU processing utilization percentage",
+              cellDataType: "number",
+              minWidth: 110,
+            },
+            {
+              field: "gpu_mem_used_mb",
+              headerName: "Mem Used (MB)",
+              headerTooltip: "GPU memory currently in use",
+              cellDataType: "number",
+              minWidth: 120,
+            },
+          ]
+        }
+      - {
+          headerName: "Memory",
+          groupId: "Mem",
+          children: [
+            {
+              field: "mem_used_mb",
+              headerName: "Used (MB)",
+              headerTooltip: "Total physical memory used in MB",
+              cellDataType: "number",
+              minWidth: 110,
+            },
+            {
+              field: "mem_total_mb",
+              columnGroupShow: "open",
+              headerName: "Total (MB)",
+              headerTooltip: "Total physical memory installed on the node in MB",
+              cellDataType: "number",
+              minWidth: 110,
+            },
+            {
+              field: "mem_used_pct",
+              headerName: "Used (%)",
+              headerTooltip: "Percentage of physical memory currently in use. Warns >50%, Critical >70%.",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number(params,2)",
+              cellStyle: "(params) => cell_background_color(params,'mem_score')",
+              minWidth: 90,
+            },
+          ]
+        }
+      - {
+          headerName: "Temporary Storage",
+          groupId: "Tmp",
+          children: [
+            # 1. /tmp Used % (Visible by default)
+            {
+              field: "tmp_used_pct",
+              headerName: "/tmp (%)",
+              headerTooltip: "Percentage of /tmp disk storage currently in use",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number(params,2)",
+              cellStyle: "(params) => cell_background_color(params,'tmp_score')",
+              minWidth: 90,
+            },
+            # 3. /tmp Details (Hidden until group is expanded)
+            {
+              field: "tmp_used_mb",
+              columnGroupShow: "open",
+              headerName: "/tmp Used (MB)",
+              headerTooltip: "Space used in /tmp in MB",
+              cellDataType: "number",
+              minWidth: 110,
+            },
+            {
+              field: "tmp_total_mb",
+              columnGroupShow: "open",
+              headerName: "/tmp Total (MB)",
+              headerTooltip: "Total space available in /tmp in MB",
+              cellDataType: "number",
+              minWidth: 110,
+            },
+            {
+              field: "top_tmp_users",
+              columnGroupShow: "open",
+              headerName: "/tmp Top Users",
+              headerTooltip: "Top 3 users utilizing /tmp storage on this node",
+              cellDataType: "text",
+              minWidth: 180,
+              wrapText: true,
+              autoHeight: true,
+            },
+            # 2. /dev/shm Used % (Visible by default)
+            {
+              field: "dev_shm_used_pct",
+              headerName: "/dev/shm (%)",
+              headerTooltip: "Percentage of /dev/shm shared memory (RAM) currently in use",
+              cellDataType: "number",
+              valueFormatter: "(params) => round_number(params,2)",
+              cellStyle: "(params) => cell_background_color(params,'dev_shm_score')",
+              minWidth: 100,
+            },
+            # 4. /dev/shm Details (Hidden until group is expanded)
+            {
+              field: "dev_shm_used_mb",
+              columnGroupShow: "open",
+              headerName: "/dev/shm Used (MB)",
+              headerTooltip: "Space used in /dev/shm shared memory in MB",
+              cellDataType: "number",
+              minWidth: 120,
+            },
+            {
+              field: "dev_shm_total_mb",
+              columnGroupShow: "open",
+              headerName: "/dev/shm Total (MB)",
+              headerTooltip: "Total space available in /dev/shm in MB",
+              cellDataType: "number",
+              minWidth: 120,
+            },
+            {
+              field: "top_shm_users",
+              columnGroupShow: "open",
+              headerName: "/dev/shm Top Users",
+              headerTooltip: "Top 3 users utilizing /dev/shm shared memory on this node",
+              cellDataType: "text",
+              minWidth: 180,
+              wrapText: true,
+              autoHeight: true,
+            },
+          ]
+        }
+
+
+- dataset:
+    name: template_login_process_overview
+    set: template
+    filepath: '$outputdir/LLtemplates/login_process_overview.handlebars'
+    stat_database: jobreport_json_stat
+    stat_table:    datasetstat_templates
+    format: 'datatable'
+    ag-grid-theme: 'balham'
+    columns:
+      - {
+          field: "pid",
+          headerName: "PID",
+          headerTooltip: "Process ID",
+          cellDataType: "number",
+          pinned: "left",
+          minWidth: 90,
+        }
+      - {
+          headerName: "Host",
+          groupId: "Host",
+          children: [
+            {
+              field: "systemname",
+              headerName: "System",
+              headerTooltip: "Cluster/System name",
+              cellDataType: "text",
+              minWidth: 100,
+            },
+            {
+              field: "nodeid",
+              headerName: "Node",
+              headerTooltip: "Login Node name",
+              cellDataType: "text",
+              minWidth: 120,
+            },
+          ]
+        }
+      - {
+          headerName: "Process Info",
+          groupId: "Info",
+          children: [
+            {
+              field: "name",
+              headerName: "Name",
+              headerTooltip: "Process name",
+              cellDataType: "text",
+              minWidth: 120,
+            },
+            {
+              field: "owner",
+              headerName: "User",
+              headerTooltip: "Username owning the process",
+              cellDataType: "text",
+              minWidth: 100,
+            },
+          ]
+        }
+      - {
+          field: "cmd",
+          headerName: "Command",
+          headerTooltip: "Full command line execution string",
+          cellDataType: "text",
+          wrapText: true,
+          autoHeight: true,
+          minWidth: 200,
+          flex: 1,
+        }
+      - {
+          headerName: "CPU Usage",
+          groupId: "CPU",
+          children: [
+            {
+              field: "cpu_pct",
+              headerName: "CPU %",
+              headerTooltip: "CPU utilization percentage (Warns >1500% over 1h)",
+              cellDataType: "number",
+              cellStyle: "(params) => cell_background_color(params,'cpu_score')",
+              minWidth: 100,
+              sort: 'desc',
+            },
+            {
+              field: "elapsed",
+              headerName: "Elapsed",
+              headerTooltip: "Wall clock time since the process started",
+              cellDataType: "timeInterval",
+              filter: "TimeIntervalParentFilter",
+              floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+              cellStyle: "(params) => cell_background_color(params,'cpu_score')",
+              minWidth: 120,
+            },
+            {
+              field: "cpu_time_secs",
+              headerName: "CPU Time",
+              headerTooltip: "Total accumulated CPU time",
+              cellDataType: "timeInterval",
+              filter: "TimeIntervalParentFilter",
+              floatingFilterComponent: "TimeIntervalFloatingFilterComponent",
+              minWidth: 120,
+            },
+            { field: "cpu_score", hide: true }
+          ]
+        }
+      - {
+          headerName: "Threads",
+          groupId: "Threads",
+          children: [
+            {
+              field: "threads",
+              headerName: "Total",
+              headerTooltip: "Number of threads spawned by this process",
+              cellDataType: "number",
+              minWidth: 90,
+            },
+            {
+              field: "d_state_threads",
+              headerName: "D-State",
+              headerTooltip: "Threads stuck in Uninterruptible Sleep. Warns >10.",
+              cellDataType: "number",
+              cellStyle: "(params) => cell_background_color(params,'d_state_score')",
+              minWidth: 100,
+            },
+          ]
+        }
+      - {
+            headerName: "Memory",
+            groupId: "Mem",
+            children: [
+              {
+                field: "mem_rss_mb",
+                headerName: "RAM (MB)",
+                headerTooltip: "Resident Set Size (physical memory) used. Critical >20% of node memory.",
+                cellDataType: "number",
+                cellStyle: "(params) => cell_background_color(params,'mem_score')",
+                minWidth: 110,
+              },
+              {
+                field: "gpu_mem_used_mb",
+                headerName: "GPU Mem (MB)",
+                headerTooltip: "GPU memory consumed",
+                cellDataType: "number",
+                minWidth: 120,
+              },
+            ]
+          }
+
+%include "jobreport_datafiles_table_templates_memoryheatmap.yaml"

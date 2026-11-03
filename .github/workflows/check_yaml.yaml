@@ -49,9 +49,6 @@ jobs:
           tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log"
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
-          # fail explicitly if any %include could not be resolved
-          # (otherwise the combined config would be silently empty)
-          ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
       - name: Combine YAML configs (common)
         working-directory: llview
         env:
@@ -65,8 +62,12 @@ jobs:
           tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log"
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
+      - name: Check if combination worked
+        working-directory: llview
+        run: |
           # fail explicitly if any %include could not be resolved
           # (otherwise the combined config would be silently empty)
+          ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
       - name: Check combined YAML
         continue-on-error: true

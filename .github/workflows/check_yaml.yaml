@@ -8,8 +8,8 @@ jobs:
   check_yaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.10"
       - name: Install yamllint
@@ -18,3 +18,64 @@ jobs:
         run: find . -path ./.git -prune -o \( -name "*.yaml" -o -name "*.yml" \) -type f -not -path "./.github/*" -exec sed -i -e '/%include /d' -e '/%includedir /d' {} \;
       - name: Run yamllint
         run: yamllint -c .yamllint.yml --no-warnings .
+
+  check_combined_yaml:
+    runs-on: ubuntu-latest
+    container: perl:5.40-bookworm
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y yamllint
+          cpanm YAML::XS warnings::unused DBI DBD::SQLite Parallel::ForkManager JSON
+      - name: Checkout llview-config
+        uses: actions/checkout@v7
+        with:
+          path: llview-config
+      - name: Checkout FZJ-JSC/llview
+        uses: actions/checkout@v7
+        with:
+          repository: FZJ-JSC/llview
+          path: llview
+      - name: Combine YAML configs (example)
+        working-directory: llview
+        env:
+          LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
+        run: |
+          mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
+          perl ./da/LLmonDB/LLmonDB_mngt.pl \
+            -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
+            printconfig > "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log" 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
+          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log"
+          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log"
+          cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
+          ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
+          # fail explicitly if any %include could not be resolved
+          # (otherwise the combined config would be silently empty)
+          ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
+      - name: Combine YAML configs (common)
+        working-directory: llview
+        env:
+          LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
+        run: |
+          mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
+          perl ./da/LLmonDB/LLmonDB_mngt.pl \
+            -config="${{ github.workspace }}/llview-config/common/server/LLgenDB/LLgenDB.yaml" \
+            printconfig > "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log" 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
+          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log"
+          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log"
+          cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
+          ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
+          # fail explicitly if any %include could not be resolved
+          # (otherwise the combined config would be silently empty)
+          ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
+      - name: Check combined YAML
+        continue-on-error: true
+        working-directory: llview
+        run: |
+          yamllint -c ../llview-config/.yamllint.yml --no-warnings ${{ github.workspace }}/combined_yaml/
+      - name: Upload combined YAML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined_yaml
+          path: combined_yaml/

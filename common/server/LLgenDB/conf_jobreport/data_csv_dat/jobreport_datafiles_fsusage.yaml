@@ -184,7 +184,6 @@
     format:         'dat'
     format_str:      '%-10s %10d %12s %8.6f %8.6f %8.6f'
     format_header:   '%-10s %10s %12s %8s %8s %8s'
-    column_filemap: 'J:jobid'
     data_database:   fsusagestate_home
     data_table:      fsusage_by_jobid_nodeid_ts
     stat_database:   jobreport_stat_fsusage_home
@@ -203,7 +202,6 @@
     column_filemap: 'J:jobid'
     column_ts:      'ts'
     format:         'csv'
-    column_filemap: 'J:jobid'
     data_database:   fsusagestate_home
     data_table:      fsusage_aggr_by_jobid_ts
     stat_database:   jobreport_stat_fsusage_home

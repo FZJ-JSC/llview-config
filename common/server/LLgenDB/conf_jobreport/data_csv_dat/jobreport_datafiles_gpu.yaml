@@ -26,7 +26,6 @@
     format_str:      '%-10s %10d %12s %10.3f %7.3f %10.3f %10.3f %10.3f %8d %8d %8d %11.3f %11.3f %11.3f %11.3f %11.3f %11.3f'
     header:          'jobid              ts       nodeid  gpu_util gpu_memu     gpu_pu   gpu_temp  gpu_memur gpu_sclk  gpu_clk gpu_clkr gpu_pcie_tx gpu_pcie_rx gpu_nvlink_tx gpu_nvlink_rx gpu_active gpu_tensor'
     format_header:   '%-10s %10s %12s %10s %7s %10s %10s %10s %8s %8s %8s %11s %11s %11s %11s'
-    column_filemap: 'J:jobid'
     # renew:          'always'
     sql_where:      '(jobid%2==0)'
     data_database:   gpustate
@@ -48,7 +47,6 @@
     format_str:      '%-10s %10d %12s %10.3f %7.3f %10.3f %10.3f %10.3f %8d %8d %8d %11.3f %11.3f %11.3f %11.3f %11.3f %11.3f'
     header:          'jobid              ts       nodeid  gpu_util gpu_memu     gpu_pu   gpu_temp  gpu_memur gpu_sclk  gpu_clk gpu_clkr gpu_pcie_tx gpu_pcie_rx gpu_nvlink_tx gpu_nvlink_rx gpu_active gpu_tensor'
     format_header:   '%-10s %10s %12s %10s %7s %10s %10s %10s %8s %8s %8s %11s %11s %11s %11s'
-    column_filemap: 'J:jobid'
     sql_where:      '(jobid%2==1)'
     # renew:          'always'
     data_database:   gpustate

@@ -44,7 +44,8 @@ jobs:
           pwd
           ls -lah .
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
-          ls -lah ${LLMONDB_PRINT_CONFIG_TO_DIR}
+          which perl
+          which cpan
           perl ./da/LLmonDB/LLmonDB_mngt.pl \
             -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
             --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"

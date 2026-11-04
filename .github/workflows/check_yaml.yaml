@@ -41,7 +41,9 @@ jobs:
         env:
           LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
+          ls -lah ${{ github.workspace }}
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
+          ls -lah ${LLMONDB_PRINT_CONFIG_TO_DIR}
           perl ./da/LLmonDB/LLmonDB_mngt.pl \
             -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
             printconfig > "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log" 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"

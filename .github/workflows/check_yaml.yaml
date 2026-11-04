@@ -46,9 +46,10 @@ jobs:
           ls -lah ${LLMONDB_PRINT_CONFIG_TO_DIR}
           perl ./da/LLmonDB/LLmonDB_mngt.pl \
             -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
-            printconfig > "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log" 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
-          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log"
-          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.log"
+            --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"
+            printconfig 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
+          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"
+          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
       - name: Combine YAML configs (common)
@@ -58,10 +59,11 @@ jobs:
         run: |
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
           perl ./da/LLmonDB/LLmonDB_mngt.pl \
-            -config="${{ github.workspace }}/llview-config/common/server/LLgenDB/LLgenDB.yaml" \
-            printconfig > "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log" 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
-          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log"
-          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.log"
+            --config="${{ github.workspace }}/llview-config/common/server/LLgenDB/LLgenDB_common.yaml" \
+            --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/common.yml"
+            printconfig 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
+          head "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.yml"
+          tail "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.yml"
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
       - name: Check if combination worked

@@ -41,7 +41,8 @@ jobs:
         env:
           LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
-          ls -lah ${{ github.workspace }}
+          pwd
+          ls -lah .
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
           ls -lah ${LLMONDB_PRINT_CONFIG_TO_DIR}
           perl ./da/LLmonDB/LLmonDB_mngt.pl \

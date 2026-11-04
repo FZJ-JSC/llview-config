@@ -15,5 +15,5 @@
 #
 # search directories for include files, "." is automatically set as first search location 
 # This folder points to a common configuration, and files existing on this folder overwrite the ones existing there
-%includedir "../../../../common/configs/server/LLgenDB"
+%includedir "../../../common/server/LLgenDB"
 %include "LLgenDB_common.yaml"

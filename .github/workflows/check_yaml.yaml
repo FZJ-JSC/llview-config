@@ -46,6 +46,8 @@ jobs:
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
           which perl
           which cpan
+          perl -V
+          find ${{ github.workspace }} -name "*warnings-unused*"
           perl ./da/LLmonDB/LLmonDB_mngt.pl \
             -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
             --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"

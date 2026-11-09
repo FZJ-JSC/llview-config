@@ -27,7 +27,8 @@ jobs:
         run: |
           apt-get update && apt-get install -y yamllint
           cpanm YAML::XS warnings::unused DBI DBD::SQLite DBD::SQLite::BundledExtensions Parallel::ForkManager JSON
-          perl -MYAML::XS -Mwarnings::unused -MDBI -MDBD::SQLite -MDBD::SQLite::BundledExtensions -MParallel::ForkManager -MJSON -e 1
+      - name: Check installed dependencies
+        run: perl -MYAML::XS -Mwarnings::unused -MDBI -MDBD::SQLite -MDBD::SQLite::BundledExtensions -MParallel::ForkManager -MJSON -e 1
       - name: Checkout llview-config
         uses: actions/checkout@v7
         with:
@@ -37,8 +38,13 @@ jobs:
         with:
           repository: FZJ-JSC/llview
           path: llview
+      - name: Check paths before combining
+        run: |
+          pwd
+          ls -lah .
+          ls -lah ./llview
+          ls -lah ./llview-config
       - name: Combine YAML configs (example)
-        working-directory: llview
         env:
           LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
@@ -47,8 +53,8 @@ jobs:
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
           which perl
           which cpan
-          perl ./da/LLmonDB/LLmonDB_mngt.pl \
-            -config="${{ github.workspace }}/llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
+          perl ./llview/da/LLmonDB/LLmonDB_mngt.pl \
+            -config="./llview-config/example_system/server/LLgenDB/LLgenDB.yaml" \
             --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml" \
             printconfig 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           head "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.yml"
@@ -56,13 +62,12 @@ jobs:
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
       - name: Combine YAML configs (common)
-        working-directory: llview
         env:
           LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
           mkdir -p "${LLMONDB_PRINT_CONFIG_TO_DIR}"
-          perl ./da/LLmonDB/LLmonDB_mngt.pl \
-            --config="${{ github.workspace }}/llview-config/common/server/LLgenDB/LLgenDB_common.yaml" \
+          perl ./llview/da/LLmonDB/LLmonDB_mngt.pl \
+            --config="./llview-config/common/server/LLgenDB/LLgenDB_common.yaml" \
             --outfile="${LLMONDB_PRINT_CONFIG_TO_DIR}/common.yml" \
             printconfig 2> "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
           head "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.yml"

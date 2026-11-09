@@ -75,17 +75,18 @@ jobs:
           cat "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
           ls -lah "${LLMONDB_PRINT_CONFIG_TO_DIR}/"
       - name: Check if combination worked
-        working-directory: llview
+        env:
+          LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
           # fail explicitly if any %include could not be resolved
           # (otherwise the combined config would be silently empty)
           ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/example.err"
           ! grep -q "ERROR: file not found" "${LLMONDB_PRINT_CONFIG_TO_DIR}/common.err"
       - name: Check combined YAML
-        continue-on-error: true
-        working-directory: llview
+        env:
+          LLMONDB_PRINT_CONFIG_TO_DIR: ${{ github.workspace }}/combined_yaml
         run: |
-          yamllint -c ../llview-config/.yamllint.yml --no-warnings ${{ github.workspace }}/combined_yaml/
+          yamllint -c ./llview-config/.yamllint.yml --no-warnings "${LLMONDB_PRINT_CONFIG_TO_DIR}"
       - name: Upload combined YAML
         if: always()
         uses: actions/upload-artifact@v4

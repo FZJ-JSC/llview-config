@@ -1,0 +1,17 @@
+---
+extends: relaxed
+
+rules:
+  line-length: disable
+  commas: disable
+  braces: disable
+  brackets: disable
+  colons: disable
+  trailing-spaces: disable
+  indentation: disable
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+
+ignore:
+  - rest/db/Full_LLgenDB.yaml

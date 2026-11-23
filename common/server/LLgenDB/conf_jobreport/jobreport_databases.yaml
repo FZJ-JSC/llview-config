@@ -887,46 +887,30 @@ jobreport_stat_loadmem:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_cpuusage:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_pc1_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_pc2_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
       
       
@@ -934,54 +918,36 @@ jobreport_stat_fabric:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_nodepower:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_rackpower:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 
@@ -989,36 +955,24 @@ jobreport_stat_rackenergy:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
       
 jobreport_stat_chippower:
   tables:
   - table:
       name: datasetstat_chip_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
       
       
@@ -1026,144 +980,96 @@ jobreport_stat_fsusage_all:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   
 jobreport_stat_fsusage_project:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_fsusage_scratch:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_fsusage_fastdata:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_fsusage_home:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_gpu:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_all_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_gpu_1:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_all_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_gpu_2:
   tables:
   - table:
       name: datasetstat_node_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_all_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
       
@@ -1171,85 +1077,63 @@ jobreport_stat_jobdata:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_sysstat:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_DBstat:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
   - table:
       name: datasetstat_all
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_DBgraph:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_steptimings:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_timelines:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
       
 jobreport_stat_transfer:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
       
 jobreport_stat_roles:
   tables:
   - table:
       name: datasetstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_projstat:
   tables:
   - table:
       name: datasetstat_projstat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_export:
   tables:
   - table:
       name: datasetstat_csv
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 jobreport_stat_app:
@@ -1419,8 +1303,6 @@ jobreport_stat_jumonc:
   tables:
   - table:
       name: datasetstat_dat
-      options:
-        index: ukey,lastts_saved,name
       %include "./databases/jobreport_databases_stat_tables.yaml"
 
 # update mentor field:

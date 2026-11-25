@@ -16,9 +16,11 @@
           vars: mintsinserted
           sql: DELETE FROM stat_by_queue_ts WHERE (ts >= mintsinserted);
                INSERT INTO stat_by_queue_ts (queue, ts, numjobs,sum_nodes,avg_waittime)
-                                                SELECT queue, ts, COUNT(jobid), SUM(numnodes), AVG(waittime)/3600.0 
+                                                SELECT queue, ts, SUM(array_task_count),
+                                                       SUM(array_task_count * numnodes),
+                                                       SUM(array_task_count * waittime) / NULLIF(SUM(array_task_count), 0) / 3600.0
                                                 FROM queuedjobs
-                                                WHERE reason_nr in (0,1,5) AND STARTTIME = 'Unknown'
+                                                WHERE reason_nr in (0,1,5) AND STARTTIME = 'Pending'
                                                       AND (ts >= mintsinserted)
                                                 GROUP BY queue,ts;
                INSERT INTO stat_by_queue_ts (queue, ts, numjobs,sum_nodes,avg_waittime)

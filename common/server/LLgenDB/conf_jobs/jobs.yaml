@@ -56,6 +56,7 @@ jobstate:
           - { name: reason_nr,       type: cnt_t,             LML_from: reason_nr,       LML_default: -1 }
           - { name: ArrayJobId,      type: jobid_t,           LML_from: ArrayJobId,      LML_default: "" }
           - { name: ArrayTaskId,     type: jobid_t,           LML_from: ArrayTaskId,     LML_default: "" }
+          - { name: array_task_count, type: cnt_t,            LML_from: array_task_count, LML_default: 1 }
           - { name: waittime,        type: hour_t,            LML_from: waittime,        LML_default: 0 }
           - { name: timetostart,     type: hour_t,            LML_from: timetostart,     LML_default: 0 }
           - { name: posinqueue,      type: pos_t,             LML_from: posinqueue,      LML_default: "" }

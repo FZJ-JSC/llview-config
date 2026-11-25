@@ -137,6 +137,7 @@ jobinfo:
     HetJobId: 'HetJobId'
     HetJobIdSet: 'HetJobIdSet'
     HetJobOffset: 'HetJobOffset'
+    array_task_count: 'array_task_count'
 
     totaltasks: 'totaltasks' #? only for DOSTEPS
 
